@@ -1,10 +1,10 @@
 from typing import Iterable, List, Optional
 
-from common import escape_string, serialize_common
-from entities.attribute import Attribute
-from entities.common import BoolValue
+from .helper import escape_string, serialize_common
+from .attribute import Attribute
 
 from .common import (
+    BoolValue,
     Author,
     Category,
     Created,
