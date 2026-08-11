@@ -1,7 +1,5 @@
 from typing import Iterable, List, Optional, Union
 
-from .helper import format_float, serialize_common
-
 from .common import (
     Align,
     Author,
@@ -29,7 +27,7 @@ from .common import (
     Version,
     Vertex,
 )
-from .helper import indent_entities
+from .helper import format_float, indent_entities, serialize_common
 
 
 class Package3DModel:

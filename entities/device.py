@@ -1,11 +1,9 @@
 from typing import Iterable, List, Optional
 
-from .helper import escape_string, serialize_common
 from .attribute import Attribute
-
 from .common import (
-    BoolValue,
     Author,
+    BoolValue,
     Category,
     Created,
     Deprecated,
@@ -19,7 +17,7 @@ from .common import (
     Version,
 )
 from .component import SignalUUID
-from .helper import indent_entities
+from .helper import escape_string, indent_entities, serialize_common
 
 
 class ComponentUUID(UUIDValue):

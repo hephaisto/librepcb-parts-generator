@@ -1,7 +1,5 @@
 from typing import Iterable, List, Optional
 
-from .helper import serialize_common
-
 from .common import (
     Author,
     BoolValue,
@@ -19,7 +17,7 @@ from .common import (
     UUIDValue,
     Version,
 )
-from .helper import indent_entities
+from .helper import indent_entities, serialize_common
 
 
 class DefaultValue(StringValue):

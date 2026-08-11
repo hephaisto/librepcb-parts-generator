@@ -1,5 +1,6 @@
-from typing import Any, Iterable, List
 from os import makedirs, path
+
+from typing import Any, Iterable, List
 
 # String escape sequences
 STRING_ESCAPE_SEQUENCES = (

@@ -6,7 +6,7 @@ from enum import Enum
 
 from typing import List, Optional
 
-from .helper import indent_entities, escape_string, format_float
+from .helper import escape_string, format_float, indent_entities
 
 
 class EnumValue(Enum):

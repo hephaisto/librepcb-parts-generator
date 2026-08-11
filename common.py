@@ -8,19 +8,7 @@ import re
 from datetime import datetime
 from os import path
 
-from typing import Any, Dict, Iterable, List, OrderedDict, Union
-
-# String escape sequences
-STRING_ESCAPE_SEQUENCES = (
-    ('\\', '\\\\'),  # Must be the first one to avoid recursion!
-    ('\b', '\\b'),
-    ('\f', '\\f'),
-    ('\n', '\\n'),
-    ('\r', '\\r'),
-    ('\t', '\\t'),
-    ('\v', '\\v'),
-    ('"', '\\"'),
-)
+from typing import Any, Dict, List, OrderedDict, Union
 
 
 def init_cache(uuid_cache_file: str) -> Dict[str, str]:

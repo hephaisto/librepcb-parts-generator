@@ -1,7 +1,5 @@
 from typing import Iterable, List
 
-from .helper import format_float, serialize_common
-
 from .common import (
     Author,
     Category,
@@ -20,7 +18,7 @@ from .common import (
     Text,
     Version,
 )
-from .helper import indent_entities
+from .helper import format_float, indent_entities, serialize_common
 
 
 class NamePosition:

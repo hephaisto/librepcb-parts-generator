@@ -1,7 +1,7 @@
 import pytest
 
-from entities.helper import escape_string, format_float
 from common import format_ipc_dimension, human_sort_key, sign
+from entities.helper import escape_string, format_float
 
 
 @pytest.mark.parametrize(
