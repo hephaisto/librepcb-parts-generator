@@ -86,18 +86,15 @@ entities are fully type annotated, you even benefit from type checking using
 
 ### UUID Caching
 
-In every generator script, you should first initialize the UUID cache:
+In every generator script, you should cache UUID entries:
 
 ```python
-from common import init_cache, save_cache
+from common import UuidCache
 
 # Initialize UUID cache, load any pre-existing entries
-uuid_cache_file = 'uuid_cache_chip.csv'
-uuid_cache = init_cache(uuid_cache_file)
+with UuidCache('uuid_cache_chip.csv'):
+    # package generation
 ```
-
-The cache is a simple in-memory dictionary. The `init_cache` function will load
-any pre-existing cache entries from the file system.
 
 Every generated UUID should have its own stable lookup key. Depending on the
 script, a wrapper function that generates missing UUIDs on the fly might make
@@ -116,12 +113,7 @@ def uuid(category: str, full_name: str, identifier: str, create: bool = True) ->
         identifier:
             For example 'pad-1' or 'pin-13'.
     """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        if not create:
-            raise ValueError('Unknown UUID: {}'.format(key))
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 pad_uuids = [
     uuid('pkg', 'RESC3216X65', 'pad-1'),
@@ -129,14 +121,8 @@ pad_uuids = [
 ]
 ```
 
-At the end of the generator script, all cached UUIDs should be persisted to the
-file system.
-
-```python
-# Persist the cache to the file system
-save_cache(uuid_cache_file, uuid_cache)
-```
-
+At the end of the generator script, all cached UUIDs will be persisted to the
+file system automatically.
 
 ## Testing
 
