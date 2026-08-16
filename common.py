@@ -7,30 +7,49 @@ import csv
 import re
 from datetime import datetime
 from os import path
+from uuid import uuid4
 
 from typing import Any, Dict, List, OrderedDict, Union
 
 
-def init_cache(uuid_cache_file: str) -> Dict[str, str]:
-    print('Loading cache: {}'.format(uuid_cache_file))
-    uuid_cache: OrderedDict[str, str] = collections.OrderedDict()
-    try:
-        with open(uuid_cache_file, 'r') as f:
-            reader = csv.reader(f, delimiter=',', quotechar='"')
-            for row in reader:
-                uuid_cache[row[0]] = row[1]
-    except FileNotFoundError:
-        pass
-    return uuid_cache
 
 
-def save_cache(uuid_cache_file: str, uuid_cache: Dict[str, str]) -> None:
-    print('Saving cache: {}'.format(uuid_cache_file))
-    with open(uuid_cache_file, 'w') as f:
-        writer = csv.writer(f, delimiter=',', quotechar='"', lineterminator='\n')
-        for k, v in sorted(uuid_cache.items()):
-            writer.writerow([k, v])
-    print('Done, cached {} UUIDs'.format(len(uuid_cache)))
+class UuidCache:
+    def __init__(self, filename: str):
+        self.filename = filename
+        self.data: OrderedDict[str, str] | None = None
+
+    def __enter__(self) -> 'UuidCache':
+        print('Loading cache: {}'.format(self.filename))
+        self.data = collections.OrderedDict()
+        try:
+            with open(self.filename, 'r') as f:
+                reader = csv.reader(f, delimiter=',', quotechar='"')
+                for row in reader:
+                    self.data[row[0]] = row[1]
+        except FileNotFoundError:
+            pass
+        return self
+
+    def __exit__(self, exception: Any, value: Any, traceback: Any) -> None:
+        if not exception:
+            assert self.data is not None, 'Exiting non-entered generator'
+            self.save_cache()
+
+    def save_cache(self):
+        print('Saving cache: {}'.format(self.filename))
+        with open(self.filename, 'w') as f:
+            writer = csv.writer(f, delimiter=',', quotechar='"', lineterminator='\n')
+            for k, v in sorted(self.data.items()):
+                writer.writerow([k, v])
+        print('Done, cached {} UUIDs'.format(len(self.data)))
+
+    def get(self, *args: Any) -> str:
+        key = '-'.join(str(a).lower().replace(' ', '~') for a in args)
+        assert self.data is not None, 'Using non-entered generator'
+        if key not in self.data:
+            self.data[key] = str(uuid4())
+        return self.data[key]
 
 
 def now() -> str:
