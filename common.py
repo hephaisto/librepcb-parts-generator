@@ -18,10 +18,14 @@ class UuidCache:
     def __init__(self, filename: str):
         self.filename = filename
         self.data: OrderedDict[str, str] | None = None
+        self.used_keys: set[str] = set()
+        self.stale_check: bool|None = None
 
-    def __enter__(self) -> 'UuidCache':
+    def __enter__(self, stale_check=True) -> 'UuidCache':
         print('Loading cache: {}'.format(self.filename))
         self.data = collections.OrderedDict()
+        self.stale_check = stale_check
+        self.used_keys = set()
         try:
             with open(self.filename, 'r') as f:
                 reader = csv.reader(f, delimiter=',', quotechar='"')
@@ -34,6 +38,7 @@ class UuidCache:
     def __exit__(self, exception: Any, value: Any, traceback: Any) -> None:
         if not exception:
             assert self.data is not None, 'Exiting non-entered generator'
+            self.check_stale()
             self.save_cache()
 
     def save_cache(self):
@@ -49,7 +54,15 @@ class UuidCache:
         assert self.data is not None, 'Using non-entered generator'
         if key not in self.data:
             self.data[key] = str(uuid4())
+        self.used_keys.add(key)
         return self.data[key]
+
+    def check_stale(self):
+        if self.stale_check:
+            stale_keys = {key for key in self.data if not key in self.used_keys}
+            if stale_keys:
+                raise RuntimeError(f"There are stale UUIDs in the cache: {stale_keys}")
+
 
 
 def now() -> str:
