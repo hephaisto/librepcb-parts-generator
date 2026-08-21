@@ -12,57 +12,59 @@ from uuid import uuid4
 from typing import Any, Dict, List, OrderedDict, Union
 
 
-
-
 class UuidCache:
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, stale_check: bool = True):
         self.filename = filename
-        self.data: OrderedDict[str, str] | None = None
         self.used_keys: set[str] = set()
-        self.stale_check: bool|None = None
-
-    def __enter__(self, stale_check=True) -> 'UuidCache':
-        print('Loading cache: {}'.format(self.filename))
-        self.data = collections.OrderedDict()
+        self.entered = False
         self.stale_check = stale_check
-        self.used_keys = set()
+
+        self.data: OrderedDict[str, str] = collections.OrderedDict()
+        print(f'Loading cache: {filename}')
         try:
             with open(self.filename, 'r') as f:
                 reader = csv.reader(f, delimiter=',', quotechar='"')
                 for row in reader:
                     self.data[row[0]] = row[1]
         except FileNotFoundError:
-            pass
+            print('Cache file {filename} not found, building new cache')
+        print(f'Cache has {len(self.data)} entries')
+
+    def __enter__(self) -> 'UuidCache':
+        self.used_keys = set()
+        self.entered = True
         return self
 
     def __exit__(self, exception: Any, value: Any, traceback: Any) -> None:
-        if not exception:
-            assert self.data is not None, 'Exiting non-entered generator'
+        if not exception and self.entered:
             self.check_stale()
             self.save_cache()
 
-    def save_cache(self):
-        print('Saving cache: {}'.format(self.filename))
+    def save_cache(self) -> None:
+        print(f'Saving cache: {self.filename}')
         with open(self.filename, 'w') as f:
             writer = csv.writer(f, delimiter=',', quotechar='"', lineterminator='\n')
             for k, v in sorted(self.data.items()):
                 writer.writerow([k, v])
-        print('Done, cached {} UUIDs'.format(len(self.data)))
+        print(f'Done, cached {len(self.data)} UUIDs')
 
     def get(self, *args: Any) -> str:
         key = '-'.join(str(a).lower().replace(' ', '~') for a in args)
-        assert self.data is not None, 'Using non-entered generator'
         if key not in self.data:
-            self.data[key] = str(uuid4())
+            if self.entered:
+                self.data[key] = str(uuid4())
+            else:
+                raise KeyError(
+                    f'{key} not found in uuid cache. Entering the context is required for auto-generation'
+                )
         self.used_keys.add(key)
         return self.data[key]
 
-    def check_stale(self):
+    def check_stale(self) -> None:
         if self.stale_check:
-            stale_keys = {key for key in self.data if not key in self.used_keys}
+            stale_keys = {key for key in self.data if key not in self.used_keys}
             if stale_keys:
-                raise RuntimeError(f"There are stale UUIDs in the cache: {stale_keys}")
-
+                raise RuntimeError(f'There are stale UUIDs in the cache: {stale_keys}')
 
 
 def now() -> str:
