@@ -13,7 +13,7 @@ from typing import Generator, Optional
 
 import qfn_mo_220
 import qfn_mo_288B
-from common import UuidCache, make_border_rectangle, now
+from common import UuidCache, grid_solderpaste, make_border_rectangle, now
 from entities.common import (
     Align,
     Angle,
@@ -255,6 +255,7 @@ def generate_pkg(
                     holes=[],
                 )
             )
+
             # docu
             footprint.add_polygon(
                 Polygon(
@@ -288,7 +289,7 @@ def generate_pkg(
                     size=Size(variant.exposed_pad.x, variant.exposed_pad.y),
                     radius=ShapeRadius(0),
                     stop_mask=StopMaskConfig(StopMaskConfig.AUTO),
-                    solder_paste=SolderPasteConfig.AUTO,
+                    solder_paste=SolderPasteConfig.OFF,
                     copper_clearance=CopperClearance(0.0),
                     function=PadFunction.STANDARD_PAD,
                     package_pad=PackagePadUuid(uuid_exposed_pad),
@@ -296,6 +297,14 @@ def generate_pkg(
                 )
             )
 
+            for p in grid_solderpaste(
+                uuid_cache=footprint_uuid.sub_cache('exposed_pad_solderpaste'),
+                x_min=-variant.exposed_pad.x / 2,
+                x_max=+variant.exposed_pad.x / 2,
+                y_min=-variant.exposed_pad.y / 2,
+                y_max=+variant.exposed_pad.y / 2,
+            ):
+                footprint.add_polygon(p)
         # package outline
         footprint.add_polygon(
             Polygon(
