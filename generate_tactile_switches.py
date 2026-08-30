@@ -4,11 +4,10 @@ Generate various tactile switch packages & devices
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import List, Optional, Tuple, Union
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.attribute import Attribute, AttributeType
 from entities.common import (
     Align,
@@ -73,16 +72,11 @@ line_width = 0.2
 courtyard_excess = 0.4
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_tactile_switches.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_tactile_switches.csv')
 
 
 def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 
 class ThtLeadConfig:
@@ -751,7 +745,7 @@ def generate_dev(
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1529,4 +1523,7 @@ if __name__ == '__main__':
             model=model,
         )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
