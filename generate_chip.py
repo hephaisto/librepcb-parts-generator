@@ -8,12 +8,11 @@ Generate the following packages:
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import Dict, Iterable, Optional, Tuple
 
+from common import UuidCache, now
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache
 from entities.common import (
     Align,
     Angle,
@@ -104,9 +103,7 @@ def get_by_density(length: float, level: str, key: str) -> float:
     return table[level][key]
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_chip.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_chip.csv')
 
 
 def uuid(category: str, full_name: str, identifier: str, create: bool = True) -> str:
@@ -121,12 +118,7 @@ def uuid(category: str, full_name: str, identifier: str, create: bool = True) ->
         identifier:
             For example 'pad-1' or 'pin-13'.
     """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        if not create:
-            raise ValueError('Unknown UUID: {}'.format(key))
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier, create=create)
 
 
 class BodyDimensions:
@@ -909,7 +901,7 @@ def generate_dev(
         device.serialize(path.join('out', library, category))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1288,4 +1280,8 @@ if __name__ == '__main__':
         create_date='2025-01-26T09:18:09Z',
         pad_ids=['p', 'n'],
     )
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

@@ -48,10 +48,10 @@ class UuidCache:
                 writer.writerow([k, v])
         print(f'Done, cached {len(self.data)} UUIDs')
 
-    def get(self, *args: Any) -> str:
+    def get(self, *args: Any, create: bool = True) -> str:
         key = '-'.join(str(a).lower().replace(' ', '~') for a in args)
         if key not in self.data:
-            if self.entered:
+            if self.entered and create:
                 self.data[key] = str(uuid4())
             else:
                 raise KeyError(
