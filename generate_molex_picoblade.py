@@ -82,10 +82,6 @@ uuid_cache = UuidCache('uuid_cache_molex_picoblade.csv')
 uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def generate_pkg(
     library: str,
     author: str,
@@ -100,7 +96,7 @@ def generate_pkg(
     generate_3d_models: bool,
 ) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', uuid_key, identifier)
+        return uuid_cache.get('pkg', uuid_key, identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -557,7 +553,7 @@ def generate_dev(
     parts: List[Part],
 ) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('dev', uuid_key, identifier)
+        return uuid_cache.get('dev', uuid_key, identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -581,7 +577,7 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category(c) for c in categories],
         component_uuid=ComponentUUID(component_uuid),
-        package_uuid=PackageUUID(uuid('pkg', uuid_key, 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', uuid_key, 'pkg')),
     )
 
     for i in range(circuits):
