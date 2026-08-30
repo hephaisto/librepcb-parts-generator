@@ -223,7 +223,7 @@ class Model:
 
     def uuid_key(self, family: Family) -> str:
         return (
-            '{}-{}'.format(family.pkg_name_prefix, model.name)
+            '{}-{}'.format(family.pkg_name_prefix, self.name)
             .lower()
             .replace(' ', '')
             .replace(',', 'p')
@@ -231,7 +231,7 @@ class Model:
 
     def get_description(self, family: Family) -> str:
         s = f'{self.circuits}x DIP switch from {family.manufacturer}.'
-        s += f'\n\nBody Size: {family.body_size_x:.2f} x {model.body_size_y:.2f} mm'
+        s += f'\n\nBody Size: {family.body_size_x:.2f} x {self.body_size_y:.2f} mm'
         if isinstance(family.lead_config, ThtLeadConfig):
             s += f'\nPitch: {family.lead_config.pitch_x:.2f} x {family.lead_config.pitch_y:.2f} mm'
         if isinstance(family.lead_config, GullWingLeadConfig):
