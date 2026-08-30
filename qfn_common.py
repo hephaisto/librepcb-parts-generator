@@ -1,10 +1,32 @@
 from dataclasses import dataclass
 
+from common import format_ipc_dimension as fp
+
 
 @dataclass(frozen=True)
 class Size:
     x: float
     y: float
+
+
+def qfn_name(
+    standard: str,
+    num_pins: int,
+    pitch: float,
+    body_length: float,
+    body_width: float,
+    body_height: float,
+    lead_length: float,
+    lead_width: float,
+    exposed_pad: Size | None,
+) -> str:
+    # Footprint expert guideline p.42: "Thermal Tabs are included in the Pin Quantity"
+    naming_num_pins = num_pins + (1 if exposed_pad else 0)
+    exposed = f'T{fp(exposed_pad.y)}X{fp(exposed_pad.x)}' if exposed_pad else ''
+    return (
+        f'{standard}{naming_num_pins}P{fp(pitch)}_'
+        + f'{fp(body_length)}X{fp(body_width)}X{fp(body_height)}L{fp(lead_length)}X{fp(lead_width)}{exposed}'
+    )
 
 
 @dataclass(frozen=True)

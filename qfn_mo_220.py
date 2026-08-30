@@ -7,8 +7,7 @@ from dataclasses import dataclass
 
 from typing import Optional
 
-from common import format_ipc_dimension as fp
-from qfn_common import Size, Variant
+from qfn_common import Size, Variant, qfn_name
 
 # table 1 values
 overall_heights = dict(
@@ -47,7 +46,7 @@ terminal_pitch = dict(
 )
 
 # table 3
-lead_width = {
+lead_widths = {
     1.00: 0.40,
     0.80: 0.30,
     0.65: 0.30,
@@ -97,6 +96,8 @@ def load_variants() -> list[Variant]:
         pitch = terminal_pitch[pitch_code]
         num_pins = 2 * row.ND + 2 * row.NE
         exposed_pad = Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None
+        lead_length = row.L
+        lead_width = lead_widths[terminal_pitch[pitch_code]]
         for height_code in ('V',):  # we ignore 'W' to have less packages
             assert row.D >= 2 * row.L + 2 * min_K + row.D2, row
             assert row.E >= 2 * row.L + 2 * min_K + row.E2, row
@@ -104,7 +105,17 @@ def load_variants() -> list[Variant]:
             variants.append(
                 Variant(
                     standard='MO-220-K.01',
-                    name=f'H{height_code}F-PQFN-{num_pins}P{fp(pitch)}_{fp(body_size_x)}X{fp(body_size_y)}X{fp(overall_height)}-{row.tag[1:4]}',
+                    name=qfn_name(
+                        standard=f'H{height_code}F-PQFN',
+                        num_pins=num_pins,
+                        pitch=pitch,
+                        body_length=body_size_y,
+                        body_width=body_size_x,
+                        body_height=overall_height,
+                        lead_length=lead_length,
+                        lead_width=lead_width,
+                        exposed_pad=exposed_pad,
+                    ),
                     overall_height=overall_height,
                     body_size_x=body_size_x,
                     body_size_y=body_size_y,
@@ -112,9 +123,9 @@ def load_variants() -> list[Variant]:
                     # upper_body_size_y=row.D1,
                     # upper_body_size_x=row.E1,
                     exposed_pad=exposed_pad,
-                    lead_length_east_west=row.L,
-                    lead_length_north_south=row.L,
-                    lead_width=lead_width[terminal_pitch[pitch_code]],
+                    lead_length_east_west=lead_length,
+                    lead_length_north_south=lead_length,
+                    lead_width=lead_width,
                     num_pins_north_south=row.ND,
                     num_pins_east_west=row.NE,
                     min_clearance=min_K,

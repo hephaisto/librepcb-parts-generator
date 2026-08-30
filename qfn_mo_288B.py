@@ -7,8 +7,7 @@ from dataclasses import dataclass
 
 from typing import Optional
 
-from common import format_ipc_dimension as fp
-from qfn_common import Size, Variant
+from qfn_common import Size, Variant, qfn_name
 
 # table 1 values
 overall_heights = dict(
@@ -52,7 +51,7 @@ terminal_pitches = dict(
 )
 
 # table 3
-lead_width = {
+lead_widths = {
     0.50: 0.25,
     0.40: 0.20,
     0.35: 0.17,
@@ -102,6 +101,8 @@ def load_variants() -> list[Variant]:
         assert body_size_y == row.E, (body_size_y, row)
         assert body_size_x == row.D, (body_size_x, row)
         L1 = row.L1 if row.L1 else row.L
+        lead_width = lead_widths[terminal_pitches[pitch_code]]
+        exposed_pad = Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None
         for height_code in ('U',):  # We ignore X1 and X2 because the height difference is minimal
             if row.D2 and row.E2:
                 assert row.D >= 2 * row.L + 2 * min_K + row.D2, row
@@ -112,17 +113,27 @@ def load_variants() -> list[Variant]:
             variants.append(
                 Variant(
                     standard='MO-288B',
-                    name=f'H{height_code}F-PQFN-{num_pins}P{fp(pitch)}_{fp(body_size_x)}X{fp(body_size_y)}X{fp(overall_height)}-{tag[1:]}',
+                    name=qfn_name(
+                        standard=f'H{height_code}F-PQFN',
+                        num_pins=num_pins,
+                        pitch=pitch,
+                        body_length=body_size_x,
+                        body_width=body_size_x,
+                        body_height=overall_height,
+                        lead_length=row.L,
+                        lead_width=lead_width,
+                        exposed_pad=exposed_pad,
+                    ),
                     overall_height=overall_height,
                     body_size_x=body_size_x,
                     body_size_y=body_size_y,
                     pitch=pitch,
                     # upper_body_size_y=row.D1,
                     # upper_body_size_x=row.E1,
-                    exposed_pad=Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None,
+                    exposed_pad=exposed_pad,
                     lead_length_east_west=row.L,
                     lead_length_north_south=L1,
-                    lead_width=lead_width[terminal_pitches[pitch_code]],
+                    lead_width=lead_width,
                     num_pins_north_south=row.ND,
                     num_pins_east_west=row.NE,
                     min_clearance=min_K,
