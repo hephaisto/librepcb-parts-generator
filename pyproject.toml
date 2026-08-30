@@ -8,6 +8,9 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "cadquery == 2.6.1",
+    # casadi 3.8.0 ships a casadi.pyi with duplicate parameter names, which breaks mypy.
+    # Fix planned for 3.8.1: https://github.com/casadi/casadi/issues/4390
+    "casadi != 3.8.0",
 ]
 version = "0.1.0"
 
