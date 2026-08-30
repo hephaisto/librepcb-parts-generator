@@ -74,21 +74,6 @@ courtyard_excess = 0.25
 uuid_cache = UuidCache('uuid_cache_sod.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "RESC3216X65".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 class FootprintConfig:
     """
     Information about the footprint itself.
@@ -181,7 +166,7 @@ def generate_pkg(
         )
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         # UUIDs
         uuid_pkg = _uuid('pkg')
@@ -417,7 +402,7 @@ def generate_pkg(
             add_footprint_variant(fpt)
 
         # Generate 3D model
-        uuid_3d = uuid('pkg', full_name, '3d')
+        uuid_3d = uuid_cache.get('pkg', full_name, '3d')
         if generate_3d_models:
             generate_3d(library, full_name, uuid_pkg, uuid_3d, config)
         package.add_3d_model(Package3DModel(uuid_3d, Name(full_name)))
