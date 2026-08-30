@@ -5,12 +5,11 @@ Generate THT LED packages.
 import sys
 from math import acos, asin, degrees, sqrt
 from os import path
-from uuid import uuid4
 
 from typing import Iterable, List, Optional, Tuple
 
+from common import UuidCache, now
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache
 from entities.common import (
     Align,
     Angle,
@@ -75,9 +74,7 @@ default_line_width = 0.2
 pkg_text_height = 1.0
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_led.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_led.csv')
 
 
 def uuid(category: str, full_name: str, identifier: str) -> str:
@@ -92,10 +89,7 @@ def uuid(category: str, full_name: str, identifier: str) -> str:
         identifier:
             For example 'pad-1' or 'pin-13'.
     """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 
 class LedConfig:
@@ -847,7 +841,7 @@ def generate_dev(
         device.serialize(path.join('out', library, category))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -904,4 +898,7 @@ if __name__ == '__main__':
         create_date='2022-08-31T11:18:33Z',
     )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
