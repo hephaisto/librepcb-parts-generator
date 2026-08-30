@@ -233,23 +233,6 @@ courtyard_excess = 0.4
 uuid_cache = UuidCache('uuid_cache_dip.csv', stale_check=False)
 
 
-def uuid(category: str, width: str, variant: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        width:
-            For example "7.62" or "15.24".
-        variant:
-            For example '8' or '28'.
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, width, variant, identifier)
-
-
 def get_y(pin_number: int, pin_count: int, spacing: float, grid_align: bool) -> float:
     """
     Return the y coordinate of the specified pin. Keep the pins grid aligned, if desired.
@@ -300,7 +283,7 @@ def generate_pkg(
 
         def _uuid(identifier: str) -> str:
             width = '{:.2f}'.format(config.lead_span)
-            return uuid(category, width, variant, identifier)
+            return uuid_cache.get(category, width, variant, identifier)
 
         uuid_pkg = _uuid('pkg')
         uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, pin_count + 1)]
