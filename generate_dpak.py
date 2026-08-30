@@ -120,21 +120,6 @@ TAB_DENSITY_LEVELS: Dict[str, Excess] = {
 uuid_cache = UuidCache('uuid_cache_dpak.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def excess_by_density(pitch: float, level: str) -> Excess:
     for table in DENSITY_LEVELS:
         if pitch > cast(float, table['pitch_above']):
@@ -230,7 +215,7 @@ def generate_pkg(
         ) + '\n\nGenerated with {}'.format(generator)
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         uuid_pkg = _uuid('pkg')
         uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, config.pin_count + 1)]
@@ -574,7 +559,7 @@ def generate_pkg(
         add_footprint_variant('density~c', 'Density Level C (min protrusion)', 'C')
 
         # Generate 3D models
-        uuid_3d = uuid('pkg', full_name, '3d')
+        uuid_3d = uuid_cache.get('pkg', full_name, '3d')
         if generate_3d_models:
             generate_3d(library, full_name, uuid_pkg, uuid_3d, config)
         package.add_3d_model(Package3DModel(uuid_3d, Name(full_name)))
