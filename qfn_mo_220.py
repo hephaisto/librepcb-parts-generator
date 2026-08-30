@@ -92,6 +92,8 @@ def load_variants() -> list[Variant]:
         pitch_code = row.tag[3]
         body_size_y = body_size[width_code]
         body_size_x = body_size[length_code]
+        assert body_size_x == row.D
+        assert body_size_y == row.E
         pitch = terminal_pitch[pitch_code]
         num_pins = 2 * row.ND + 2 * row.NE
         for height_code in ('V',):  # we ignore 'W' to have less packages
