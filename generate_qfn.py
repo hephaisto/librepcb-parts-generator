@@ -287,7 +287,7 @@ def generate_pkg(
                     shape=Shape.ROUNDED_RECT,
                     position=Position(0, 0),
                     rotation=Rotation(0),
-                    size=Size(variant.exposed_pad.width, variant.exposed_pad.length),
+                    size=Size(variant.exposed_pad.x, variant.exposed_pad.y),
                     radius=ShapeRadius(0),
                     stop_mask=StopMaskConfig(StopMaskConfig.AUTO),
                     solder_paste=SolderPasteConfig.AUTO,

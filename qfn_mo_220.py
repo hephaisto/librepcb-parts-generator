@@ -96,6 +96,7 @@ def load_variants() -> list[Variant]:
         assert body_size_y == row.E
         pitch = terminal_pitch[pitch_code]
         num_pins = 2 * row.ND + 2 * row.NE
+        exposed_pad = Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None
         for height_code in ('V',):  # we ignore 'W' to have less packages
             assert row.D >= 2 * row.L + 2 * min_K + row.D2, row
             assert row.E >= 2 * row.L + 2 * min_K + row.E2, row
@@ -110,7 +111,7 @@ def load_variants() -> list[Variant]:
                     pitch=pitch,
                     # upper_body_size_y=row.D1,
                     # upper_body_size_x=row.E1,
-                    exposed_pad=Size(width=row.D2, length=row.E2),
+                    exposed_pad=exposed_pad,
                     lead_length_east_west=row.L,
                     lead_length_north_south=row.L,
                     lead_width=lead_width[terminal_pitch[pitch_code]],

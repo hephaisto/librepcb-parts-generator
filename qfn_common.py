@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Size:
-    length: float
-    width: float
+    x: float
+    y: float
 
 
 @dataclass(frozen=True)

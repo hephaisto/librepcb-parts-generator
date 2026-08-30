@@ -119,7 +119,7 @@ def load_variants() -> list[Variant]:
                     pitch=pitch,
                     # upper_body_size_y=row.D1,
                     # upper_body_size_x=row.E1,
-                    exposed_pad=Size(width=row.D2, length=row.E2) if row.D2 and row.E2 else None,
+                    exposed_pad=Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None,
                     lead_length_east_west=row.L,
                     lead_length_north_south=L1,
                     lead_width=lead_width[terminal_pitches[pitch_code]],
