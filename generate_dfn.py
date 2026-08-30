@@ -79,21 +79,6 @@ MIN_TRACE = 0.10
 uuid_cache = UuidCache('uuid_cache_dfn.csv', stale_check=False)
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def get_y(pin_number: int, pin_count: int, spacing: float) -> float:
     """
     Return the y coordinate of the specified pin.
@@ -164,7 +149,7 @@ def generate_pkg(
         full_keywords = 'dfn{},{}'.format(config.pin_count, keywords)
 
     def _uuid(identifier: str) -> str:
-        return uuid(category, full_name, identifier)
+        return uuid_cache.get(category, full_name, identifier)
 
     uuid_pkg = _uuid('pkg')
     uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, config.pin_count + 1)]
