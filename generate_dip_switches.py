@@ -94,10 +94,6 @@ generator = 'librepcb-parts-generator (generate_dip_switches.py)'
 uuid_cache = UuidCache('uuid_cache_dip_switches.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def get_y(family: 'Family', pin_index: int, circuits: int, pitch: float) -> float:
     y0 = (circuits - 1) * pitch / 2
     dy = y0 - family.lead_config.pitch_y * (pin_index % circuits)
@@ -261,7 +257,7 @@ def generate_sym(
     full_name = name.format(circuits=circuits, variant=variant)
 
     def _uuid(identifier: str) -> str:
-        return uuid('sym', f'{variant.id}-{circuits:02}', identifier)
+        return uuid_cache.get('sym', f'{variant.id}-{circuits:02}', identifier)
 
     uuid_sym = _uuid('sym')
 
@@ -450,7 +446,7 @@ def generate_cmp(
     full_name = name.format(circuits=circuits)
 
     def _uuid(identifier: str) -> str:
-        return uuid('cmp', f'{circuits:02}', identifier)
+        return uuid_cache.get('cmp', f'{circuits:02}', identifier)
 
     uuid_cmp = _uuid('cmp')
 
@@ -572,7 +568,7 @@ def generate_pkg(
     full_name = family.pkg_name_prefix + '_' + model.name.replace(' ', '_')
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', model.uuid_key(family), identifier)
+        return uuid_cache.get('pkg', model.uuid_key(family), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -1094,7 +1090,7 @@ def generate_dev(
     full_name = f'{family.dev_name_prefix} {model.name}'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', model.uuid_key(family), identifier)
+        return uuid_cache.get('dev', model.uuid_key(family), identifier)
 
     uuid_dev = _uuid('dev')
 
