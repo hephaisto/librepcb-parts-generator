@@ -17,11 +17,10 @@ import math
 import sys
 from functools import partial
 from os import makedirs, path
-from uuid import uuid4
 
 from typing import Callable, Iterable, Optional, Tuple
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Align,
     Angle,
@@ -117,9 +116,7 @@ KIND_WIRE_CONNECTOR = 'wireconnector'
 KIND_SCREW_TERMINAL = 'screwterminal'
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_connectors.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
 def uuid(category: str, kind: str, variant: str, identifier: str) -> str:
@@ -136,10 +133,7 @@ def uuid(category: str, kind: str, variant: str, identifier: str) -> str:
         identifier:
             For example 'pad-1' or 'pin-13'.
     """
-    key = '{}-{}-{}-{}'.format(category, kind, variant, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, kind, variant, identifier)
 
 
 def get_y(pin_number: int, pin_count: int, rows: int, spacing: float, grid_align: bool) -> float:
@@ -910,7 +904,7 @@ def generate_dev(
             )
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1272,4 +1266,7 @@ if __name__ == '__main__':
         create_date='2018-10-17T19:13:41Z',
     )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
