@@ -14,6 +14,18 @@ from typing import Any, Dict, List, Literal, OrderedDict, Union
 from entities.common import Angle, Position, Vertex
 
 
+class SubCache:
+    def __init__(self, base: Union['UuidCache', 'SubCache'], *prefixes: Any):
+        self.base = base
+        self.prefixes = prefixes
+
+    def get(self, *args: Any) -> str:
+        return self.base.get(*self.prefixes, *args)
+
+    def sub_cache(self, *prefixes: Any) -> 'SubCache':
+        return SubCache(self, *prefixes)
+
+
 class UuidCache:
     def __init__(self, filename: str, stale_check: bool = True):
         self.filename = filename
@@ -68,6 +80,9 @@ class UuidCache:
             stale_keys = {key for key in self.data if key not in self.used_keys}
             if stale_keys:
                 raise RuntimeError(f'There are stale UUIDs in the cache: {stale_keys}')
+
+    def sub_cache(self, *prefixes: Any) -> SubCache:
+        return SubCache(self, *prefixes)
 
 
 def now() -> str:

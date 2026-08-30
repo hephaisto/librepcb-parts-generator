@@ -9,7 +9,7 @@ from collections import Counter
 from math import isclose
 from os import path
 
-from typing import Any, Generator, Optional
+from typing import Generator, Optional
 
 import qfn_mo_220
 import qfn_mo_288B
@@ -134,12 +134,11 @@ def generate_pkg(
     category = 'pkg'
     keywords = f'qfn{variant.num_pins}'
 
-    def package_uuid(*args: Any) -> str:
-        return uuid_cache.get('pkg', variant.name, *args)
+    package_uuid = uuid_cache.sub_cache('pkg', variant.name)
 
-    uuid_pkg = package_uuid('pkg')
-    uuid_pads = [package_uuid('pad', p) for p in range(1, variant.num_pins + 1)]
-    uuid_exposed_pad = package_uuid('exposed')
+    uuid_pkg = package_uuid.get('pkg')
+    uuid_pads = [package_uuid.get('pad', p) for p in range(1, variant.num_pins + 1)]
+    uuid_exposed_pad = package_uuid.get('exposed')
 
     logging.info('Generating {variant.name}: {uuid_pkg}')
 
@@ -171,12 +170,11 @@ def generate_pkg(
         name: str,
         density_level: str,
     ) -> None:
-        def footprint_uuid(*args: Any) -> str:
-            return package_uuid('footprint', key)
+        footprint_uuid = package_uuid.sub_cache('footprint', key)
 
         # Create Meta-data
         footprint = Footprint(
-            uuid=footprint_uuid('footprint'),
+            uuid=footprint_uuid.get('footprint'),
             name=Name(name),
             description=Description(''),
             position_3d=Position3D.zero(),
@@ -242,7 +240,7 @@ def generate_pkg(
             # pad
             footprint.add_pad(
                 FootprintPad(
-                    uuid=footprint_uuid('pad', pad_name),
+                    uuid=footprint_uuid.get('pad', pad_name),
                     side=ComponentSide.TOP,
                     shape=Shape.ROUNDED_RECT,
                     position=Position(center_x, center_y),
@@ -260,7 +258,7 @@ def generate_pkg(
             # docu
             footprint.add_polygon(
                 Polygon(
-                    uuid=footprint_uuid('pad', pad_name, 'docu'),
+                    uuid=footprint_uuid.get('pad', pad_name, 'docu'),
                     layer=Layer('top_documentation'),
                     width=Width(0),
                     fill=Fill(True),
@@ -282,7 +280,7 @@ def generate_pkg(
         if variant.exposed_pad:
             footprint.add_pad(
                 FootprintPad(
-                    uuid=footprint_uuid('pad', 'exposed'),
+                    uuid=footprint_uuid.get('pad', 'exposed'),
                     side=ComponentSide.TOP,
                     shape=Shape.ROUNDED_RECT,
                     position=Position(0, 0),
@@ -301,7 +299,7 @@ def generate_pkg(
         # package outline
         footprint.add_polygon(
             Polygon(
-                uuid=footprint_uuid('outline'),
+                uuid=footprint_uuid.get('outline'),
                 layer=Layer('top_package_outlines'),
                 width=Width(0),
                 fill=Fill(False),
@@ -315,7 +313,7 @@ def generate_pkg(
         # package outline on docu
         footprint.add_polygon(
             Polygon(
-                uuid=footprint_uuid('outline', 'docu'),
+                uuid=footprint_uuid.get('outline', 'docu'),
                 layer=Layer('top_documentation'),
                 width=Width(body_outline_width),
                 fill=Fill(False),
@@ -329,7 +327,7 @@ def generate_pkg(
         # docu pin1 indicator on package
         footprint.add_circle(
             Circle(
-                uuid=footprint_uuid('docu', 'pin1indicator'),
+                uuid=footprint_uuid.get('docu', 'pin1indicator'),
                 layer=Layer('top_documentation'),
                 width=Width(0),
                 fill=Fill(True),
@@ -357,7 +355,7 @@ def generate_pkg(
 
                 footprint.add_polygon(
                     Polygon(
-                        uuid=footprint_uuid('silkscreen', x_sign, y_sign),
+                        uuid=footprint_uuid.get('silkscreen', x_sign, y_sign),
                         layer=Layer('top_legend'),
                         width=Width(silkscreen_line_width),
                         fill=Fill(False),
@@ -371,7 +369,7 @@ def generate_pkg(
         # silkscreen pin-1 indicator
         footprint.add_circle(
             Circle(
-                uuid=footprint_uuid('docu', 'silkscreen', 'pin1indicator'),
+                uuid=footprint_uuid.get('docu', 'silkscreen', 'pin1indicator'),
                 layer=Layer('top_legend'),
                 width=Width(0),
                 fill=Fill(True),
@@ -387,7 +385,7 @@ def generate_pkg(
         # courtyard
         footprint.add_polygon(
             generate_courtyard(
-                uuid=footprint_uuid('courtyard'),
+                uuid=footprint_uuid.get('courtyard'),
                 max_x=body_x + toe,
                 max_y=body_y + toe,
                 excess_x=courtyard_excess,
@@ -398,7 +396,7 @@ def generate_pkg(
         # name
         footprint.add_text(
             StrokeText(
-                uuid=footprint_uuid('name'),
+                uuid=footprint_uuid.get('name'),
                 layer=Layer('top_names'),
                 position=Position(0.0, body_y + label_offset),
                 align=Align('center bottom'),
@@ -416,7 +414,7 @@ def generate_pkg(
         # value
         footprint.add_text(
             StrokeText(
-                uuid=footprint_uuid('value'),
+                uuid=footprint_uuid.get('value'),
                 layer=Layer('top_values'),
                 position=Position(0.0, -(body_y + label_offset)),
                 align=Align('center top'),
@@ -438,7 +436,7 @@ def generate_pkg(
 
     # 3d
     if generate_3d_models:
-        uuid_3d = package_uuid('3d')
+        uuid_3d = package_uuid.get('3d')
         path_3d = path.join('out', library, 'pkg', uuid_pkg, f'{uuid_3d}.step')
         generate_3d(variant, path_3d)
         package.add_3d_model(Package3DModel(uuid_3d, Name(variant.name)))
