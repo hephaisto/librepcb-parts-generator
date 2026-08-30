@@ -99,21 +99,6 @@ outdir = path.join('out', 'STMicroelectronics.lplib')
 uuid_cache = UuidCache('uuid_cache_stm_mcu.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified item.
-
-    Params:
-        category:
-            For example 'cmp' or 'sym'.
-        full_name:
-            For example "STM32WB55CEUx".
-        identifier:
-            For example 'sym' or 'pin-pb9'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 class Pin:
     """
     Data class for a MCU pin.
@@ -630,7 +615,7 @@ def generate_sym(mcus: List[MCU], symbol_map: Dict[str, str], debug: bool = Fals
         if debug:
             print(pin_mapping)
 
-        uuid_sym = uuid('sym', mcu.symbol_identifier, 'sym')
+        uuid_sym = uuid_cache.get('sym', mcu.symbol_identifier, 'sym')
         symbol = Symbol(
             uuid_sym,
             Name(mcu.symbol_name),
@@ -648,7 +633,7 @@ def generate_sym(mcus: List[MCU], symbol_map: Dict[str, str], debug: bool = Fals
         for pin_name, position, rotation in placement.pins(width, grid):
             symbol.add_pin(
                 SymbolPin(
-                    uuid('sym', mcu.symbol_identifier, 'pin-{}'.format(pin_name)),
+                    uuid_cache.get('sym', mcu.symbol_identifier, 'pin-{}'.format(pin_name)),
                     Name(pin_name),
                     position,
                     rotation,
@@ -660,7 +645,7 @@ def generate_sym(mcus: List[MCU], symbol_map: Dict[str, str], debug: bool = Fals
                 )
             )
         polygon = Polygon(
-            uuid('sym', mcu.symbol_identifier, 'polygon'),
+            uuid_cache.get('sym', mcu.symbol_identifier, 'polygon'),
             Layer('sym_outlines'),
             Width(line_width),
             Fill(False),
@@ -676,7 +661,7 @@ def generate_sym(mcus: List[MCU], symbol_map: Dict[str, str], debug: bool = Fals
         symbol.add_polygon(polygon)
 
         text_name = Text(
-            uuid('sym', mcu.symbol_identifier, 'text-name'),
+            uuid_cache.get('sym', mcu.symbol_identifier, 'text-name'),
             Layer('sym_names'),
             Value('{{NAME}}'),
             Align('left bottom'),
@@ -685,7 +670,7 @@ def generate_sym(mcus: List[MCU], symbol_map: Dict[str, str], debug: bool = Fals
             Rotation(0.0),
         )
         text_value = Text(
-            uuid('sym', mcu.symbol_identifier, 'text-value'),
+            uuid_cache.get('sym', mcu.symbol_identifier, 'text-value'),
             Layer('sym_values'),
             Value('{{VALUE}}'),
             Align('left top'),
@@ -737,7 +722,7 @@ def generate_cmp(
         cmp_version = '0.1'
 
         component = Component(
-            uuid('cmp', mcu.component_identifier, 'cmp'),
+            uuid_cache.get('cmp', mcu.component_identifier, 'cmp'),
             Name(name),
             Description(mcu.component_description),
             mcu.keywords,
@@ -759,7 +744,7 @@ def generate_cmp(
                 Signal(
                     # Use original signal name, so that changing the cleanup function
                     # does not influence the identifier.
-                    uuid('cmp', mcu.component_identifier, 'signal-{}'.format(signal)),
+                    uuid_cache.get('cmp', mcu.component_identifier, 'signal-{}'.format(signal)),
                     # Use cleaned up signal name for name
                     Name(signal),
                     Role.PASSIVE,
@@ -772,8 +757,8 @@ def generate_cmp(
 
         # Add symbol variant
         gate = Gate(
-            uuid('cmp', mcu.component_identifier, 'variant-single-gate1'),
-            SymbolUUID(uuid('sym', mcu.symbol_identifier, 'sym')),
+            uuid_cache.get('cmp', mcu.component_identifier, 'variant-single-gate1'),
+            SymbolUUID(uuid_cache.get('sym', mcu.symbol_identifier, 'sym')),
             Position(0, 0),
             Rotation(0.0),
             Required(True),
@@ -782,14 +767,18 @@ def generate_cmp(
         for generic, concrete in pin_mapping.items():
             gate.add_pin_signal_map(
                 PinSignalMap(
-                    uuid('sym', mcu.symbol_identifier, 'pin-{}'.format(generic)),
-                    SignalUUID(uuid('cmp', mcu.component_identifier, 'signal-{}'.format(concrete))),
+                    uuid_cache.get('sym', mcu.symbol_identifier, 'pin-{}'.format(generic)),
+                    SignalUUID(
+                        uuid_cache.get(
+                            'cmp', mcu.component_identifier, 'signal-{}'.format(concrete)
+                        )
+                    ),
                     TextDesignator.SIGNAL_NAME,
                 )
             )
         component.add_variant(
             Variant(
-                uuid('cmp', mcu.component_identifier, 'variant-single'),
+                uuid_cache.get('cmp', mcu.component_identifier, 'variant-single'),
                 Norm.EMPTY,
                 Name('single'),
                 Description('Symbol with all MCU pins'),
@@ -837,7 +826,7 @@ def generate_dev(
     pad_uuid_mapping = common.get_pad_uuids(base_lib_path, package_uuid_mapping[mcu.package])
 
     device = Device(
-        uuid('dev', mcu.ref, 'dev'),
+        uuid_cache.get('dev', mcu.ref, 'dev'),
         Name(mcu.ref),
         Description(mcu.description),
         mcu.keywords,
@@ -847,7 +836,7 @@ def generate_dev(
         Deprecated(False),
         GeneratedBy(''),
         cmpcat,
-        ComponentUUID(uuid('cmp', mcu.component_identifier, 'cmp')),
+        ComponentUUID(uuid_cache.get('cmp', mcu.component_identifier, 'cmp')),
         PackageUUID(package_uuid_mapping[mcu.package]),
     )
     for pin in mcu.pins:
@@ -855,7 +844,9 @@ def generate_dev(
         device.add_pad(
             ComponentPad(
                 pad_uuid,
-                SignalUUID(uuid('cmp', mcu.component_identifier, 'signal-{}'.format(pin.name))),
+                SignalUUID(
+                    uuid_cache.get('cmp', mcu.component_identifier, 'signal-{}'.format(pin.name))
+                ),
             )
         )
 
