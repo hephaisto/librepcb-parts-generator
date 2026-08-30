@@ -106,21 +106,6 @@ def get_by_density(length: float, level: str, key: str) -> float:
 uuid_cache = UuidCache('uuid_cache_chip.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str, create: bool = True) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "RESC3216X65".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier, create=create)
-
-
 class BodyDimensions:
     """
     Dimensions of the physical body.
@@ -266,7 +251,7 @@ def generate_pkg(
         )
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         # UUIDs
         uuid_pkg = _uuid('pkg')
@@ -701,7 +686,7 @@ def generate_pkg(
 
         # Generate 3D models (for certain package types)
         if package_type in ['RESC', 'CAPC', 'CAPPM', 'INDC']:
-            uuid_3d = uuid('pkg', full_name, '3d')
+            uuid_3d = uuid_cache.get('pkg', full_name, '3d')
             if generate_3d_models:
                 generate_3d(library, package_type, full_name, uuid_pkg, uuid_3d, config)
             package.add_3d_model(Package3DModel(uuid_3d, Name(full_name)))
@@ -866,13 +851,14 @@ def generate_dev(
         full_keywords = '{},{},{}'.format(size_metric, size_imperial, keywords)
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         # UUIDs
         uuid_dev = _uuid('dev')
-        pkg = uuid('pkg', pkg_name, 'pkg', create=False)
+        pkg = uuid_cache.get('pkg', pkg_name, 'pkg', create=False)
         pads = [
-            uuid('pkg', pkg_name, 'pad-{}'.format(i), create=False) for i in (pad_ids or ['1', '2'])
+            uuid_cache.get('pkg', pkg_name, 'pad-{}'.format(i), create=False)
+            for i in (pad_ids or ['1', '2'])
         ]
 
         print('Generating dev "{}": {}'.format(full_name, uuid_dev))
