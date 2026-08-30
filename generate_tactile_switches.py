@@ -75,10 +75,6 @@ courtyard_excess = 0.4
 uuid_cache = UuidCache('uuid_cache_tactile_switches.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 class ThtLeadConfig:
     def __init__(
         self,
@@ -226,7 +222,7 @@ def generate_pkg(
     full_name = family.pkg_name_prefix + '_' + model.name.replace(' ', '_')
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', model.uuid_key(family), identifier)
+        return uuid_cache.get('pkg', model.uuid_key(family), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -699,7 +695,7 @@ def generate_dev(
     full_name = f'{family.dev_name_prefix} {model.name}'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', model.uuid_key(family), identifier)
+        return uuid_cache.get('dev', model.uuid_key(family), identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -717,7 +713,7 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category('e29f0cb3-ef6d-4203-b854-d75150cbae0b')],
         component_uuid=ComponentUUID('6eedad0b-5b41-4233-9b7b-8be1ee8527e0'),
-        package_uuid=PackageUUID(uuid('pkg', model.uuid_key(family), 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', model.uuid_key(family), 'pkg')),
     )
 
     signal_uuids = [
@@ -726,7 +722,7 @@ def generate_dev(
     ]
 
     for i in range(4):
-        pad_uuid = uuid('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
+        pad_uuid = uuid_cache.get('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
         device.add_pad(ComponentPad(pad_uuid, SignalUUID(signal_uuids[i // 2])))
 
     for part in model.parts:
