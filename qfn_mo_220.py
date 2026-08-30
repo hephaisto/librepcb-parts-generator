@@ -71,14 +71,16 @@ class VariantRow:
 
 # table 6
 # other values are derived from variation designators
+# fmt: off
 variant_table_definition = [
-    #           tag      D     E     D1    E1    D2    E2    L     ND  NE
-    VariantRow('xEEB  ', 3.00, 3.00, 2.75, 2.75, 0.70, 0.70, 0.55, 1, 1),
-    VariantRow('xGEB  ', 4.00, 3.00, 3.75, 2.75, 1.70, 0.70, 0.55, 3, 1),
-    VariantRow('xGGB  ', 4.00, 4.00, 3.75, 3.75, 1.70, 1.70, 0.55, 3, 3),
-    VariantRow('xGGB-1', 4.00, 4.00, None, None, 2.20, 2.20, 0.55, 4, 3),
+    #           tag       D      E      D1     E1     D2     E2    L     ND  NE
+    VariantRow('xEEB  ',  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1),
+    VariantRow('xGEB  ',  4.00,  3.00,  3.75,  2.75,  1.70,  0.70, 0.55,  3,  1),
+    VariantRow('xGGB  ',  4.00,  4.00,  3.75,  3.75,  1.70,  1.70, 0.55,  3,  3),
+    VariantRow('xGGB-1',  4.00,  4.00,  None,  None,  2.20,  2.20, 0.55,  4,  3),
     VariantRow('xRRE-2', 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27),
 ]
+# fmt: on
 
 
 min_K = 0.20
