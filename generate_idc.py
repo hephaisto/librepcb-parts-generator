@@ -78,21 +78,6 @@ uuid_cache = UuidCache('uuid_cache_idc.csv')
 uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
-def uuid(category: str, variant: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified object.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        variant:
-            For example 'cnctech-3020-06-0300' or '1x13'.
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, variant, identifier)
-
-
 class Coord:
     def __init__(self, x: float, y: float, round_values: bool = True):
         if x == -0.0:
@@ -205,7 +190,7 @@ class Config:
 
 def generate_pkg(config: Config) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', config.identifier, identifier)
+        return uuid_cache.get('pkg', config.identifier, identifier)
 
     uuid_pkg = _uuid('pkg')
     uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(config.pin_count)]
@@ -525,7 +510,7 @@ def generate_pkg(config: Config) -> None:
 
 def generate_dev(config: Config) -> None:
     def _uuid(category: str, identifier: str) -> str:
-        return uuid(category, config.identifier, identifier)
+        return uuid_cache.get(category, config.identifier, identifier)
 
     def _uuid_cmp(identifier: str) -> str:
         variant = '{}x{}'.format(2, config.pin_count // 2)
