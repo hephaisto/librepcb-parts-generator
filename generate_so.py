@@ -11,12 +11,11 @@ Generate the following SO packages:
 import sys
 from collections import namedtuple
 from os import path
-from uuid import uuid4
 
 from typing import Dict, Iterable, List, Optional, cast
 
+from common import UuidCache, now
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache
 from entities.common import (
     Align,
     Angle,
@@ -124,9 +123,7 @@ DENSITY_LEVELS: List[Dict[str, object]] = [
 ]
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_so.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_so.csv', stale_check=False)
 
 
 def uuid(category: str, full_name: str, identifier: str) -> str:
@@ -141,10 +138,7 @@ def uuid(category: str, full_name: str, identifier: str) -> str:
         identifier:
             For example 'pad-1' or 'pin-13'.
     """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 
 def excess_by_density(pitch: float, level: str) -> Excess:
@@ -702,7 +696,7 @@ def generate_3d(
     assembly.save(out_path, fused=False)
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1119,4 +1113,8 @@ if __name__ == '__main__':
         version='0.3',
         create_date='2020-12-26T16:14:30Z',
     )
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
