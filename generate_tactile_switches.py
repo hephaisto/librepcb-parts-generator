@@ -188,7 +188,7 @@ class Model:
 
     def uuid_key(self, family: Family) -> str:
         return (
-            '{}-{}'.format(family.pkg_name_prefix, model.name)
+            '{}-{}'.format(family.pkg_name_prefix, self.name)
             .lower()
             .replace(' ', '')
             .replace(',', 'p')
