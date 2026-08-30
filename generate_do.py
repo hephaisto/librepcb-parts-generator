@@ -70,10 +70,6 @@ line_width = 0.2
 uuid_cache = UuidCache('uuid_cache_do.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 class DoConfig:
     def __init__(
         self,
@@ -131,7 +127,7 @@ Generated with {GENERATOR_NAME}
 """
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', pkg_name, identifier)
+        return uuid_cache.get('pkg', pkg_name, identifier)
 
     uuid_pkg = _uuid('pkg')
 
