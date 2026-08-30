@@ -9,7 +9,9 @@ from datetime import datetime
 from os import path
 from uuid import uuid4
 
-from typing import Any, Dict, List, OrderedDict, Union
+from typing import Any, Dict, List, Literal, OrderedDict, Union
+
+from entities.common import Angle, Position, Vertex
 
 
 class UuidCache:
@@ -128,3 +130,37 @@ def human_sort_key(key: str) -> List[Any]:
         return int(text) if text.isdigit() else text
 
     return [_convert(x) for x in re.split(r'(\d+)', key) if x]
+
+
+def make_border_rectangle(
+    left: float,
+    right: float,
+    top: float,
+    bottom: float,
+    width: float,
+    direction: Literal['inner', 'outer', 'center'],
+) -> list[Vertex]:
+    w = (
+        width
+        / 2
+        * {
+            'inner': -1.0,
+            'center': 0.0,
+            'outer': +1.0,
+        }[direction]
+    )
+    line_l = left - w
+    line_r = right + w
+    line_t = top + w
+    line_b = bottom - w
+
+    return [
+        Vertex(Position(x, y), Angle(0))
+        for x, y in [
+            (line_l, line_t),
+            (line_l, line_b),
+            (line_r, line_b),
+            (line_r, line_t),
+            (line_l, line_t),
+        ]
+    ]
