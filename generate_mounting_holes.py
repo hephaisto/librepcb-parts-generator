@@ -70,10 +70,6 @@ courtyard_excess = 0.5
 uuid_cache = UuidCache('uuid_cache_mounting_holes.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def generate_pkg(
     library: str,
     author: str,
@@ -94,7 +90,7 @@ Generated with {generator}
     keywords = f'mounting,hole,pad,drill,screw,{name},{hole_diameter}mm,{pad_diameter}mm'
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', name.lower(), identifier)
+        return uuid_cache.get('pkg', name.lower(), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -293,7 +289,7 @@ Generated with {generator}
     keywords = f'mounting,hole,pad,drill,screw,{name},{hole_diameter}mm,{pad_diameter}mm'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', name.lower(), identifier)
+        return uuid_cache.get('dev', name.lower(), identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -314,12 +310,13 @@ Generated with {generator}
             Category('8ca4f9fb-3dd3-4c1e-a097-6601b437bbc6'),
         ],
         component_uuid=ComponentUUID('5c0f6cd9-dced-46ae-8098-6cccaa8726ec'),
-        package_uuid=PackageUUID(uuid('pkg', name.lower(), 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', name.lower(), 'pkg')),
     )
 
     device.add_pad(
         ComponentPad(
-            uuid('pkg', name.lower(), 'pad'), SignalUUID('c8721bab-6c90-43f6-8135-c32fce7aecc0')
+            uuid_cache.get('pkg', name.lower(), 'pad'),
+            SignalUUID('c8721bab-6c90-43f6-8135-c32fce7aecc0'),
         )
     )
     device.add_approval('(approved no_parts)')
