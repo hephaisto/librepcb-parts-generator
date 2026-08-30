@@ -104,7 +104,7 @@ def uuid(category: str, full_name: str, identifier: str) -> str:
     return uuid_cache[key]
 
 
-def get_y(pin_index: int, circuits: int, pitch: float) -> float:
+def get_y(family: 'Family', pin_index: int, circuits: int, pitch: float) -> float:
     y0 = (circuits - 1) * pitch / 2
     dy = y0 - family.lead_config.pitch_y * (pin_index % circuits)
     if pin_index < circuits:
@@ -617,7 +617,7 @@ def generate_pkg(
         package.add_pad(PackagePad(uuid=uuid_pkg_pad, name=Name(str(i + 1))))
         uuid_fpt_pad = _uuid('default-pad-{}'.format(i + 1))
         x = (family.lead_config.pitch_x / 2) * (-1 if (i < model.circuits) else 1)
-        y = get_y(i, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, i, model.circuits, family.lead_config.pitch_y)
         if isinstance(family.lead_config, ThtLeadConfig):
             footprint.add_pad(
                 FootprintPad(
@@ -719,7 +719,7 @@ def generate_pkg(
         text_x += family.lead_config.pad_size_x / 2
     text_x = (text_x + (-window_dx - (line_width / 2))) / 2
     for circuit in range(model.circuits):
-        y = get_y(circuit, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, circuit, model.circuits, family.lead_config.pitch_y)
         footprint.add_polygon(
             Polygon(
                 uuid=_uuid(f'default-polygon-documentation-window-{circuit}'),
@@ -773,7 +773,7 @@ def generate_pkg(
     dx = (family.body_size_x / 2) + (line_width / 2)
     dx_pin1 = (family.lead_config.pitch_x / 2) - (line_width / 2)
     dy = (model.body_size_y / 2) + (line_width / 2)
-    dy_inner = get_y(0, model.circuits, family.lead_config.pitch_y)
+    dy_inner = get_y(family, 0, model.circuits, family.lead_config.pitch_y)
     if isinstance(family.lead_config, ThtLeadConfig):
         dx_pin1 += family.lead_config.pad_diameter / 2
         dy_inner += (family.lead_config.pad_diameter / 2) + (line_width / 2) + 0.15
@@ -813,7 +813,9 @@ def generate_pkg(
             Vertex(Position(right, top), Angle(0)),
         ]
         for i in range(model.circuits):
-            y = get_y(model.circuits * 2 - i - 1, model.circuits, family.lead_config.pitch_y)
+            y = get_y(
+                family, model.circuits * 2 - i - 1, model.circuits, family.lead_config.pitch_y
+            )
             outline_vertices += [
                 Vertex(Position(right, y + leads_dy), Angle(0)),
                 Vertex(Position(right_leads, y + leads_dy), Angle(0)),
@@ -825,7 +827,7 @@ def generate_pkg(
             Vertex(Position(left, bottom), Angle(0)),
         ]
         for i in range(model.circuits):
-            y = get_y(model.circuits - i - 1, model.circuits, family.lead_config.pitch_y)
+            y = get_y(family, model.circuits - i - 1, model.circuits, family.lead_config.pitch_y)
             outline_vertices += [
                 Vertex(Position(left, y - leads_dy), Angle(0)),
                 Vertex(Position(left_leads, y - leads_dy), Angle(0)),
@@ -858,7 +860,7 @@ def generate_pkg(
     right = -left
     if isinstance(family.lead_config, GullWingLeadConfig):
         top_leads = (
-            get_y(0, model.circuits, family.lead_config.pitch_y)
+            get_y(family, 0, model.circuits, family.lead_config.pitch_y)
             + (family.lead_config.width / 2)
             + courtyard_excess
         )
@@ -969,7 +971,7 @@ def generate_3d_model(
         .fillet(0.2)
     )
     for i in range(model.circuits):
-        y = get_y(i, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, i, model.circuits, family.lead_config.pitch_y)
         body = body.workplane(origin=(0, y), offset=family.body_size_z / 2).box(
             family.window_size[0],
             family.window_size[1],
@@ -1064,14 +1066,20 @@ def generate_3d_model(
             'lead-{}'.format(i + 1),
             StepColor.LEAD_SMT,
             location=cq.Location(
-                (lead_xz[0], get_y(i, model.circuits, family.lead_config.pitch_y), lead_xz[1])
+                (
+                    lead_xz[0],
+                    get_y(family, i, model.circuits, family.lead_config.pitch_y),
+                    lead_xz[1],
+                )
             ),
         )
         assembly.add_body(
             actuator,
             'actuator-{}'.format(i + 1),
             cq.Color(family.actuator_color),
-            location=cq.Location((0, get_y(i, model.circuits, family.lead_config.pitch_y), 0)),
+            location=cq.Location(
+                (0, get_y(family, i, model.circuits, family.lead_config.pitch_y), 0)
+            ),
         )
 
     # Save without fusing for massively better minification!
