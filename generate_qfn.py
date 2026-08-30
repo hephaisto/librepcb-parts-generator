@@ -7,6 +7,7 @@ import argparse
 import logging
 from math import isclose
 from os import path
+from collections import Counter
 
 from typing import Any, Generator, Optional
 
@@ -493,6 +494,10 @@ if __name__ == '__main__':
         logging.warning('Not generating 3D models unless the command line option is selected')
 
     variants = qfn_mo_220.load_variants() + qfn_mo_288B.load_variants()
+    counts = Counter((v.name for v in variants))
+    duplicates = [n for n, count in counts.items() if count >1]
+    if duplicates:
+        raise RuntimeError(f"Multiple definitions of variants: {duplicates}")
 
     with UuidCache('uuid_cache_qfn.csv') as uuid_cache:
         for variant in variants:
