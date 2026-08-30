@@ -501,6 +501,7 @@ if __name__ == '__main__':
 
     with UuidCache('uuid_cache_qfn.csv') as uuid_cache:
         for variant in variants:
+            print(variant.name)
             try:
                 generate_pkg(
                     variant=variant,
