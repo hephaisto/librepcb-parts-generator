@@ -29,12 +29,11 @@ import math
 import re
 from collections import defaultdict
 from os import listdir, path
-from uuid import uuid4
 
 from typing import Any, DefaultDict, Dict, Iterable, Iterator, List, Optional, Set, Tuple
 
 import common
-from common import human_sort_key, init_cache, save_cache
+from common import UuidCache, human_sort_key
 from entities.common import (
     Align,
     Angle,
@@ -97,9 +96,7 @@ author = Author('Danilo Bargen, John Eaton')
 cmpcat = [Category('22151601-c2d9-419a-87bc-266f9c7c3459')]
 outdir = path.join('out', 'STMicroelectronics.lplib')
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_stm_mcu.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_stm_mcu.csv')
 
 
 def uuid(category: str, full_name: str, identifier: str) -> str:
@@ -114,10 +111,7 @@ def uuid(category: str, full_name: str, identifier: str) -> str:
         identifier:
             For example 'sym' or 'pin-pb9'.
     """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 
 class Pin:
@@ -904,7 +898,7 @@ def generate(data: Dict[str, MCU], base_lib_path: str, debug: bool = False) -> N
         generate_dev(mcu, symbol_map, base_lib_path, debug)
 
 
-if __name__ == '__main__':
+def main() -> None:
     parser = argparse.ArgumentParser(description='Generate STM MCU library elements')
     parser.add_argument(
         '--data-dir',
@@ -945,4 +939,8 @@ if __name__ == '__main__':
     generate(data, args.base_lib, args.debug)
 
     print()
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
