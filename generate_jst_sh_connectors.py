@@ -155,12 +155,8 @@ def variant(mounting_variant: str, circuits: int) -> str:
     return f'{mounting_variant}{circuits}'
 
 
-def uuid(category: str, kind: str, variant: str, identifier: str) -> str:
-    return uuid_cache_jst.get(category, kind, variant, identifier)
-
-
 def connector_uuid(category: str, connector: Connector, identifier: str) -> str:
-    return uuid(
+    return uuid_cache_jst.get(
         category, connector.type, variant(connector.subtype, connector.circuits), identifier
     )
 
