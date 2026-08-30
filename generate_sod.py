@@ -77,7 +77,7 @@ uuid_cache_file = 'uuid_cache_sod.csv'
 uuid_cache = init_cache(uuid_cache_file)
 
 
-def uuid(category: str, full_name: str, identifier: str, create: bool = True) -> str:
+def uuid(category: str, full_name: str, identifier: str) -> str:
     """
     Return a uuid for the specified pin.
 
@@ -91,8 +91,6 @@ def uuid(category: str, full_name: str, identifier: str, create: bool = True) ->
     """
     key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
     if key not in uuid_cache:
-        if not create:
-            raise ValueError('Unknown UUID: {}'.format(key))
         uuid_cache[key] = str(uuid4())
     return uuid_cache[key]
 
