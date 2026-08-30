@@ -13,21 +13,6 @@ generator = 'librepcb-parts-generator (generate_mosfet_dual.py)'
 uuid_cache = UuidCache('uuid_cache_mosfet_dual.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "RESC3216X65".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 class PackageConfig:
     def __init__(
         self,
@@ -119,7 +104,7 @@ def generate_dev(
         package_config = PACKAGES[fet_config.package]
 
         # UUIDs
-        uuid_dev = uuid('dev', full_name, 'dev')
+        uuid_dev = uuid_cache.get('dev', full_name, 'dev')
         uuid_pkg = package_config.uuid_pkg
         uuid_pads = package_config.uuid_pads
         uuid_signals = [SIGNALS[s] for s in fet_config.signals]
