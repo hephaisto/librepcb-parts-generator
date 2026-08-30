@@ -75,10 +75,6 @@ courtyard_excess = 0.4
 uuid_cache = UuidCache('uuid_cache_axial_tht.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def calculate_pad_hole_diameter(max_leg_diameter: float) -> float:
     """
     Calculate the typical pad hole diameter for a given maximum leg diameter.
@@ -151,7 +147,7 @@ Generated with {generator}
     )
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', pkg_identifier, identifier)
+        return uuid_cache.get('pkg', pkg_identifier, identifier)
 
     uuid_pkg = _uuid('pkg')
 
