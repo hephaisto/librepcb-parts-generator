@@ -8,11 +8,10 @@ Generate mounting hole packages & devices
 """
 
 from os import path
-from uuid import uuid4
 
 from typing import Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Angle,
     Author,
@@ -68,16 +67,11 @@ stopmask_excess = 0.05
 courtyard_excess = 0.5
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_mounting_holes.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_mounting_holes.csv')
 
 
 def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+    return uuid_cache.get(category, full_name, identifier)
 
 
 def generate_pkg(
@@ -333,7 +327,7 @@ Generated with {generator}
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     # Maximum head diameters of standard screws:
     #
     # | Screw | ISO4762 | ISO7380 | ISO14580 | DIN965 |
@@ -374,4 +368,7 @@ if __name__ == '__main__':
             pad_diameter=pad_diameter,
         )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
