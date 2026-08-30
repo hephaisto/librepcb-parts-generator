@@ -78,10 +78,6 @@ uuid_cache = UuidCache('uuid_cache_screw_terminals.csv')
 uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def create_screw_diagonal(y: float, diameter: float, dir: int) -> List[Vertex]:
     dx = (diameter / 2) * math.cos(math.radians(45 + 12 * dir))
     dy = (diameter / 2) * math.sin(math.radians(45 + 12 * dir))
@@ -209,7 +205,7 @@ def generate_pkg(
     full_name = family.pkg_name_prefix + '_' + model.name.replace(' ', '_')
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', model.uuid_key(family), identifier)
+        return uuid_cache.get('pkg', model.uuid_key(family), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -621,7 +617,7 @@ def generate_dev(
     full_name = f'{family.dev_name_prefix} {model.name}'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', model.uuid_key(family), identifier)
+        return uuid_cache.get('dev', model.uuid_key(family), identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -646,11 +642,11 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category('f9db4ef5-2220-462a-adff-deac8402ecf0')],
         component_uuid=ComponentUUID(component_uuid),
-        package_uuid=PackageUUID(uuid('pkg', model.uuid_key(family), 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', model.uuid_key(family), 'pkg')),
     )
 
     for i in range(model.circuits):
-        pad_uuid = uuid('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
+        pad_uuid = uuid_cache.get('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
         device.add_pad(ComponentPad(pad_uuid, SignalUUID(signal_uuids[i])))
 
     device.add_part(
