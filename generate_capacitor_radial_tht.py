@@ -78,21 +78,6 @@ LEAD_WIDTH_TO_DRILL = {
 uuid_cache = UuidCache('uuid_cache_capacitors_radial_tht.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified element.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    return uuid_cache.get(category, full_name, identifier)
-
-
 def get_variant(
     diameter: float,
     height: float,
@@ -124,7 +109,7 @@ def generate_pkg(
     variant = get_variant(diameter, height, pitch, lead_width)
 
     def _pkg_uuid(identifier: str) -> str:
-        return uuid('pkg', variant, identifier)
+        return uuid_cache.get('pkg', variant, identifier)
 
     def _create_footprint(footprint_identifier: str, name: str) -> Footprint:
         def _fpt_uuid(identifier: str) -> str:
@@ -450,7 +435,7 @@ def generate_dev(
     variant = get_variant(diameter, height, pitch, lead_width)
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', variant, identifier)
+        return uuid_cache.get('dev', variant, identifier)
 
     device = Device(
         uuid=_uuid('dev'),
@@ -471,17 +456,17 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category('c011cc6b-b762-498e-8494-d1994f3043cf')],
         component_uuid=ComponentUUID('c54375c5-7149-4ded-95c5-7462f7301ee7'),
-        package_uuid=PackageUUID(uuid('pkg', variant, 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', variant, 'pkg')),
     )
     device.add_pad(
         ComponentPad(
-            pad_uuid=uuid('pkg', variant, 'pad-plus'),
+            pad_uuid=uuid_cache.get('pkg', variant, 'pad-plus'),
             signal=SignalUUID('e010ecbb-6210-4da3-9270-ebd58656dbf0'),
         )
     )
     device.add_pad(
         ComponentPad(
-            pad_uuid=uuid('pkg', variant, 'pad-minus'),
+            pad_uuid=uuid_cache.get('pkg', variant, 'pad-minus'),
             signal=SignalUUID('af3ffca8-0085-4edb-a775-fcb759f63411'),
         )
     )
