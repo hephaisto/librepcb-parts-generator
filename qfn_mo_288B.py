@@ -73,14 +73,14 @@ class VariantRow:
 
 # table 6
 # other values are derived from variation designators
+# fmt: off
 variant_table_definition = [
     #           tag      D     E     D2    E2    L    L1    ND NE
     VariantRow('xECD  ', 1.50, 1.50, None, None, 0.35, 0.40, 1, 3),
-    VariantRow(
-        'xEFD  ', 1.50, 2.00, None, None, 0.35, 0.40, 1, 4
-    ),  # JEDEC original, probably an error
+    VariantRow('xEFD  ', 1.50, 2.00, None, None, 0.35, 0.40, 1, 4),  # JEDEC original, probably an error
     # VariantRow("xFED  ", 1.50, 2.00, None, None, 0.35, 0.40, 1, 4),
 ]
+# fmt: on
 
 
 # table 2
