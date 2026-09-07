@@ -33,20 +33,20 @@ def qfn_name(
 class Variant:
     name: str
     standard: str
-    overall_height: float  # A
-    body_size_x: float  # D
-    body_size_y: float  # E
-    pitch: float  # e
+    overall_height: float
+    body_size_x: float
+    body_size_y: float
+    pitch: float
     # only for rendering, unused because we don't differentiate between different package versions
-    # upper_body_size_x: float  # D1
-    # upper_body_size_y: float  # E1
-    exposed_pad: Size | None  # D2/E2
-    lead_length_east_west: float  # L
-    lead_length_north_south: float  # L
-    lead_width: float  # b
-    num_pins_east_west: int  # ND
-    num_pins_north_south: int  # NE
-    min_clearance: float  # K
+    # upper_body_size_x: float
+    # upper_body_size_y: float
+    exposed_pad: Size | None
+    lead_length_east_west: float
+    lead_length_north_south: float
+    lead_width: float
+    num_pins_east_west: int
+    num_pins_north_south: int
+    min_clearance: float
     additional_names: list[tuple[str, str]]
     # relative to "lead width / 2", e.g. the default gives R=0.05 for a lead width of 0.25
     pad_radius: float = field(default=0.4)
