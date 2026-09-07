@@ -60,7 +60,8 @@ lead_widths = {
 
 @dataclass
 class VariantRow:
-    tag: str
+    tag: Optional[str]
+    e: float
     D: float
     E: float
     D2: Optional[float]
@@ -76,10 +77,10 @@ class VariantRow:
 # other values are derived from variation designators
 # fmt: off
 variant_table_definition = [
-    #           tag      D     E     D2    E2    L    L1    ND NE
-    VariantRow('xECD  ', 1.50, 1.50, None, None, 0.35, 0.40, 1, 3),
-    VariantRow('xEFD  ', 1.50, 2.00, None, None, 0.35, 0.40, 1, 4),  # JEDEC original, probably an error
-    # VariantRow("xFED  ", 1.50, 2.00, None, None, 0.35, 0.40, 1, 4),
+    #           tag      e     D     E     D2    E2    L     L1   ND NE
+    VariantRow('xECD  ', 0.50, 1.50, 1.50, None, None, 0.35, 0.40, 1, 3), # smallest
+    VariantRow('xHJF  ', 0.35, 2.30, 2.80, None, None, 0.30, 0.40, 4, 8), # biggest
+    VariantRow(  None  , 0.40, 3.00, 3.00, 1.90, 1.90, 0.35, 0.35, 5, 5, names=[('NXP', 'SOT1969-1')]),
 ]
 # fmt: on
 
@@ -91,18 +92,20 @@ min_K = 0.15
 def load_variants() -> list[Variant]:
     variants: list[Variant] = []
     for row in variant_table_definition:
-        tag = row.tag.strip()
-        length_code = tag[1]
-        width_code = tag[2]
-        pitch_code = tag[3]
-        body_size_y = body_size_ys[width_code]
-        body_size_x = body_lengths[length_code]
-        pitch = terminal_pitches[pitch_code]
+        body_size_y = row.E
+        body_size_x = row.D
+        pitch = row.e
+        if row.tag:
+            tag = row.tag.strip()
+            length_code = tag[1]
+            width_code = tag[2]
+            pitch_code = tag[3]
+            assert body_size_ys[width_code] == body_size_y
+            assert body_lengths[length_code] == body_size_x
+            assert terminal_pitches[pitch_code] == pitch
+        lead_width = lead_widths[pitch]
         num_pins = 2 * row.ND + 2 * row.NE
-        assert body_size_y == row.E, (body_size_y, row)
-        assert body_size_x == row.D, (body_size_x, row)
         L1 = row.L1 if row.L1 else row.L
-        lead_width = lead_widths[terminal_pitches[pitch_code]]
         exposed_pad = Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None
         for height_code in ('U',):  # We ignore X1 and X2 because the height difference is minimal
             if row.D2 and row.E2:

@@ -75,12 +75,10 @@ class VariantRow:
 # fmt: off
 variant_table_definition = [
     #           tag       D      E      D1     E1     D2     E2    L     ND  NE
-    VariantRow('xEEB  ',  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1),
-    VariantRow('xGEB  ',  4.00,  3.00,  3.75,  2.75,  1.70,  0.70, 0.55,  3,  1),
-    VariantRow('xGGB  ',  4.00,  4.00,  3.75,  3.75,  1.70,  1.70, 0.55,  3,  3),
-    VariantRow('xGGB-1',  4.00,  4.00,  None,  None,  2.20,  2.20, 0.55,  4,  3),
-    VariantRow('xRRE-2', 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27),
-    VariantRow('xGGD-9',  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('TI', 'RGE0024B')]),
+    VariantRow('xEEB  ',  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1), # smallest
+    VariantRow('xRRE-2', 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27), # biggest
+    VariantRow('xGGD-9',  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('TI', 'RGE0024B'), ('NXP', 'SOT616-1')]), # noqa: E501
+    VariantRow('xGGD-6',  4.00,  4.00,  None,  None,  2.65,  2.80, 0.40,  6,  6, names=[('NXP', 'SOT616-3')]),
 ]
 # fmt: on
 
