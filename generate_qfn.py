@@ -110,6 +110,12 @@ def get_pad_positions(variant: Variant) -> Generator[tuple[str, float], None, No
 
 
 def default_description(variant: Variant) -> str:
+    if variant.additional_names:
+        additional_names = 'Manufacturer-specific names:\n'
+        for manufacturer, name in variant.additional_names:
+            additional_names += f'- {name} ({manufacturer})\n'
+    else:
+        additional_names = ''
     return f"""\
 {variant.num_pins}-pin Quad Flat No-Lead package (QFN), standardized by {variant.standard}
 
@@ -117,6 +123,7 @@ Pitch: {variant.pitch:.1f} mm
 Nominal width: {variant.body_size_y:.2f} mm
 Nominal length: {variant.body_size_x:.2f} mm
 Height: {variant.overall_height:.2f} mm
+{additional_names}
 
 Generated with {generator_name}
 """.strip()
@@ -132,7 +139,14 @@ def generate_pkg(
     library: str = 'LibrePCB_Base.lplib',
 ) -> None:
     category = 'pkg'
+
     keywords = f'qfn{variant.num_pins}'
+    for manufacturer, name in variant.additional_names:
+        keywords += f',{manufacturer.lower()}_{name.lower()}'
+
+    name = variant.name
+    if variant.additional_names:
+        name += f' ({",".join(f"{manufacturer}_{name}" for manufacturer, name in variant.additional_names)})'
 
     package_uuid = uuid_cache.sub_cache('pkg', variant.name)
 
@@ -145,7 +159,7 @@ def generate_pkg(
     # Create package
     package = Package(
         uuid=uuid_pkg,
-        name=Name(variant.name),
+        name=Name(name),
         description=Description(default_description(variant)),
         keywords=Keywords(keywords),
         author=Author(author),

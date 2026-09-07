@@ -47,6 +47,7 @@ class Variant:
     num_pins_east_west: int  # ND
     num_pins_north_south: int  # NE
     min_clearance: float  # K
+    additional_names: list[tuple[str, str]]
 
     @property
     def num_pins(self) -> int:

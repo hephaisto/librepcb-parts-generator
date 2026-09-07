@@ -3,7 +3,7 @@ This file contains configurations for QFN packages according to MO-228B
 Not all possible combinations are generated. You can enable more combinations in the table below.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from typing import Optional
 
@@ -69,6 +69,7 @@ class VariantRow:
     L1: Optional[float]
     ND: int
     NE: int
+    names: list[tuple[str, str]] = field(default_factory=list)
 
 
 # table 6
@@ -137,6 +138,7 @@ def load_variants() -> list[Variant]:
                     num_pins_north_south=row.ND,
                     num_pins_east_west=row.NE,
                     min_clearance=min_K,
+                    additional_names=row.names,
                 )
             )
     return variants
