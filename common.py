@@ -7,30 +7,65 @@ import csv
 import re
 from datetime import datetime
 from os import path
+from uuid import uuid4
 
 from typing import Any, Dict, List, OrderedDict, Union
 
 
-def init_cache(uuid_cache_file: str) -> Dict[str, str]:
-    print('Loading cache: {}'.format(uuid_cache_file))
-    uuid_cache: OrderedDict[str, str] = collections.OrderedDict()
-    try:
-        with open(uuid_cache_file, 'r') as f:
-            reader = csv.reader(f, delimiter=',', quotechar='"')
-            for row in reader:
-                uuid_cache[row[0]] = row[1]
-    except FileNotFoundError:
-        pass
-    return uuid_cache
+class UuidCache:
+    def __init__(self, filename: str, stale_check: bool = True):
+        self.filename = filename
+        self.used_keys: set[str] = set()
+        self.entered = False
+        self.stale_check = stale_check
 
+        self.data: OrderedDict[str, str] = collections.OrderedDict()
+        print(f'Loading cache: {filename}')
+        try:
+            with open(self.filename, 'r') as f:
+                reader = csv.reader(f, delimiter=',', quotechar='"')
+                for row in reader:
+                    self.data[row[0]] = row[1]
+        except FileNotFoundError:
+            print('Cache file {filename} not found, building new cache')
+        print(f'Cache has {len(self.data)} entries')
 
-def save_cache(uuid_cache_file: str, uuid_cache: Dict[str, str]) -> None:
-    print('Saving cache: {}'.format(uuid_cache_file))
-    with open(uuid_cache_file, 'w') as f:
-        writer = csv.writer(f, delimiter=',', quotechar='"', lineterminator='\n')
-        for k, v in sorted(uuid_cache.items()):
-            writer.writerow([k, v])
-    print('Done, cached {} UUIDs'.format(len(uuid_cache)))
+    def __enter__(self) -> 'UuidCache':
+        self.used_keys = set()
+        self.entered = True
+        return self
+
+    def __exit__(self, exception: Any, value: Any, traceback: Any) -> None:
+        if not exception and self.entered:
+            self.check_stale()
+            self.save_cache()
+            self.entered = False
+
+    def save_cache(self) -> None:
+        print(f'Saving cache: {self.filename}')
+        with open(self.filename, 'w') as f:
+            writer = csv.writer(f, delimiter=',', quotechar='"', lineterminator='\n')
+            for k, v in sorted(self.data.items()):
+                writer.writerow([k, v])
+        print(f'Done, cached {len(self.data)} UUIDs')
+
+    def get(self, *args: Any, create: bool = True) -> str:
+        key = '-'.join(str(a).lower().replace(' ', '~') for a in args)
+        if key not in self.data:
+            if self.entered and create:
+                self.data[key] = str(uuid4())
+            else:
+                raise KeyError(
+                    f'{key} not found in uuid cache. Entering the context is required for auto-generation'
+                )
+        self.used_keys.add(key)
+        return self.data[key]
+
+    def check_stale(self) -> None:
+        if self.stale_check:
+            stale_keys = {key for key in self.data if key not in self.used_keys}
+            if stale_keys:
+                raise RuntimeError(f'There are stale UUIDs in the cache: {stale_keys}')
 
 
 def now() -> str:

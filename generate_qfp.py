@@ -14,12 +14,11 @@ from collections import namedtuple
 from copy import deepcopy
 from itertools import chain
 from os import path
-from uuid import uuid4
 
 from typing import Dict, Iterable, List, Optional, cast
 
+from common import UuidCache, now, sign
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache, sign
 from entities.common import (
     Align,
     Angle,
@@ -87,9 +86,7 @@ silkscreen_offset = 0.150  # 150 µm
 courtyard_around_pads = 0.1  # 100 µm
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_qfp.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_qfp.csv')
 
 
 # Based on Footprint Expert Guidelines, Chapter 7.0 (Nominal Calculation)
@@ -336,24 +333,6 @@ OTHER_CONFIGS = [
 # fmt: on
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
-
-
 class Pad:
     def __init__(self, x: float, y: float, orientation: str):
         self.x = x
@@ -440,7 +419,7 @@ def generate_pkg(
         full_description = config.description()
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         uuid_pkg = _uuid('pkg')
         uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, config.lead_count + 1)]
@@ -802,7 +781,7 @@ def generate_pkg(
         add_footprint_variant('density~c', 'Density Level C (min protrusion)', 'C')
 
         # Generate 3D models
-        uuid_3d = uuid('pkg', full_name, '3d')
+        uuid_3d = uuid_cache.get('pkg', full_name, '3d')
         if generate_3d_models:
             generate_3d(library, full_name, uuid_pkg, uuid_3d, config)
         package.add_3d_model(Package3DModel(uuid_3d, Name(full_name)))
@@ -906,7 +885,7 @@ def generate_3d(
     assembly.save(out_path, fused=False)
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -930,4 +909,8 @@ if __name__ == '__main__':
         version='0.5',
         create_date='2019-02-07T21:03:03Z',
     )
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

@@ -4,11 +4,10 @@ Generate SOD diode packages
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import Dict, Iterable, Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Align,
     Angle,
@@ -72,29 +71,7 @@ silkscreen_clearance = 0.15
 courtyard_excess = 0.25
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_sod.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, full_name: str, identifier: str, create: bool = True) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "RESC3216X65".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        if not create:
-            raise ValueError('Unknown UUID: {}'.format(key))
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_sod.csv')
 
 
 class FootprintConfig:
@@ -189,7 +166,7 @@ def generate_pkg(
         )
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, full_name, identifier)
+            return uuid_cache.get(category, full_name, identifier)
 
         # UUIDs
         uuid_pkg = _uuid('pkg')
@@ -425,7 +402,7 @@ def generate_pkg(
             add_footprint_variant(fpt)
 
         # Generate 3D model
-        uuid_3d = uuid('pkg', full_name, '3d')
+        uuid_3d = uuid_cache.get('pkg', full_name, '3d')
         if generate_3d_models:
             generate_3d(library, full_name, uuid_pkg, uuid_3d, config)
         package.add_3d_model(Package3DModel(uuid_3d, Name(full_name)))
@@ -503,7 +480,7 @@ def generate_3d(
     assembly.save(out_path, fused=True)
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -586,4 +563,8 @@ if __name__ == '__main__':
         version='0.2',
         create_date='2018-12-02T22:17:40Z',
     )
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

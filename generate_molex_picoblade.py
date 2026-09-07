@@ -4,11 +4,10 @@ Generate packages and devices for the Molex Picoblade family
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import List, Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.attribute import Attribute, AttributeType
 from entities.common import (
     Align,
@@ -78,18 +77,9 @@ LINE_WIDTH = 0.2
 COURTYARD_EXCESS = 0.2
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_molex_picoblade.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_molex_picoblade.csv')
 
-uuid_cache_connectors = init_cache('uuid_cache_connectors.csv')
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
 def generate_pkg(
@@ -106,7 +96,7 @@ def generate_pkg(
     generate_3d_models: bool,
 ) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', uuid_key, identifier)
+        return uuid_cache.get('pkg', uuid_key, identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -563,16 +553,16 @@ def generate_dev(
     parts: List[Part],
 ) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('dev', uuid_key, identifier)
+        return uuid_cache.get('dev', uuid_key, identifier)
 
     uuid_dev = _uuid('dev')
 
     print(f'Generating {name}: {uuid_dev}')
 
     connector_uuid_stub = f'cmp-pinheader-1x{circuits}'
-    component_uuid = uuid_cache_connectors[f'{connector_uuid_stub}-cmp']
+    component_uuid = uuid_cache_connectors.get(f'{connector_uuid_stub}-cmp')
     signal_uuids = [
-        uuid_cache_connectors[f'{connector_uuid_stub}-signal-{i}'] for i in range(circuits)
+        uuid_cache_connectors.get(f'{connector_uuid_stub}-signal-{i}') for i in range(circuits)
     ]
 
     device = Device(
@@ -587,14 +577,14 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category(c) for c in categories],
         component_uuid=ComponentUUID(component_uuid),
-        package_uuid=PackageUUID(uuid('pkg', uuid_key, 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', uuid_key, 'pkg')),
     )
 
     for i in range(circuits):
-        pad_uuid = uuid_cache[f'pkg-{uuid_key}-pad-{i + 1:02}']
+        pad_uuid = uuid_cache.get(f'pkg-{uuid_key}-pad-{i + 1:02}')
         device.add_pad(ComponentPad(pad_uuid, SignalUUID(signal_uuids[i])))
     for i in range(2):
-        pad_uuid = uuid_cache[f'pkg-{uuid_key}-pad-tab{i + 1}']
+        pad_uuid = uuid_cache.get(f'pkg-{uuid_key}-pad-tab{i + 1}')
         device.add_pad(ComponentPad(pad_uuid, SignalUUID('none')))
 
     device.add_resource(
@@ -611,7 +601,7 @@ def generate_dev(
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -675,4 +665,7 @@ if __name__ == '__main__':
             parts=parts,
         )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

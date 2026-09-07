@@ -159,12 +159,11 @@ Only some variants are listed.
 """
 
 from os import path
-from uuid import uuid4
 
 from typing import Iterable, Optional, Tuple
 
+from common import UuidCache, now
 from common import format_ipc_dimension as ipc
-from common import init_cache, now, save_cache
 from entities.common import (
     Align,
     Angle,
@@ -231,29 +230,7 @@ outline_hole_offset = 0.4  # Distance between package outline and pads hole cent
 courtyard_excess = 0.4
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_dip.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, width: str, variant: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        width:
-            For example "7.62" or "15.24".
-        variant:
-            For example '8' or '28'.
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}-{}'.format(category, width, variant, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_dip.csv', stale_check=False)
 
 
 def get_y(pin_number: int, pin_count: int, spacing: float, grid_align: bool) -> float:
@@ -306,7 +283,7 @@ def generate_pkg(
 
         def _uuid(identifier: str) -> str:
             width = '{:.2f}'.format(config.lead_span)
-            return uuid(category, width, variant, identifier)
+            return uuid_cache.get(category, width, variant, identifier)
 
         uuid_pkg = _uuid('pkg')
         uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, pin_count + 1)]
@@ -602,7 +579,7 @@ def generate_pkg(
         print('{}: Wrote package {}'.format(ipc_name, uuid_pkg))
 
 
-if __name__ == '__main__':
+def main() -> None:
     generate_pkg(
         library='LibrePCB_Base.lplib',
         author='Danilo B.',
@@ -637,4 +614,8 @@ if __name__ == '__main__':
         create_date='2018-11-04T23:13:00Z',
         version='0.2',
     )
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

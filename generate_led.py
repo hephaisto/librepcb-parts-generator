@@ -5,12 +5,11 @@ Generate THT LED packages.
 import sys
 from math import acos, asin, degrees, sqrt
 from os import path
-from uuid import uuid4
 
 from typing import Iterable, List, Optional, Tuple
 
+from common import UuidCache, now
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache
 from entities.common import (
     Align,
     Angle,
@@ -75,27 +74,7 @@ default_line_width = 0.2
 pkg_text_height = 1.0
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_led.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_led.csv')
 
 
 class LedConfig:
@@ -169,7 +148,7 @@ def generate_pkg(
         generated_3d_uuids = set()
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, config.pkg_name, identifier)
+            return uuid_cache.get(category, config.pkg_name, identifier)
 
         uuid_pkg = _uuid('pkg')
 
@@ -808,7 +787,7 @@ def generate_dev(
     for config in configs:
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, config.dev_name, identifier)
+            return uuid_cache.get(category, config.dev_name, identifier)
 
         uuid_dev = _uuid('dev')
 
@@ -826,17 +805,17 @@ def generate_dev(
             generated_by=GeneratedBy(''),
             categories=[Category(cmpcat)],
             component_uuid=ComponentUUID('2b24b18d-bd95-4fb4-8fe6-bce1d020ead4'),
-            package_uuid=PackageUUID(uuid('pkg', config.pkg_name, 'pkg')),
+            package_uuid=PackageUUID(uuid_cache.get('pkg', config.pkg_name, 'pkg')),
         )
         device.add_pad(
             ComponentPad(
-                pad_uuid=uuid('pkg', config.pkg_name, 'pad-a'),
+                pad_uuid=uuid_cache.get('pkg', config.pkg_name, 'pad-a'),
                 signal=SignalUUID('f1467b5c-cc7d-44b4-8076-d729f35b3a6a'),
             )
         )
         device.add_pad(
             ComponentPad(
-                pad_uuid=uuid('pkg', config.pkg_name, 'pad-c'),
+                pad_uuid=uuid_cache.get('pkg', config.pkg_name, 'pad-c'),
                 signal=SignalUUID('7b023430-b68f-403a-80b8-c7deb12e7a0c'),
             )
         )
@@ -847,7 +826,7 @@ def generate_dev(
         device.serialize(path.join('out', library, category))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -904,4 +883,7 @@ if __name__ == '__main__':
         create_date='2022-08-31T11:18:33Z',
     )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

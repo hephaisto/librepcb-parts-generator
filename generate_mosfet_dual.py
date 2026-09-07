@@ -3,35 +3,14 @@ Generate dual mosfet devices.
 """
 
 from os import makedirs, path
-from uuid import uuid4
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 
 generator = 'librepcb-parts-generator (generate_mosfet_dual.py)'
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_mosfet_dual.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "RESC3216X65".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_mosfet_dual.csv')
 
 
 class PackageConfig:
@@ -125,7 +104,7 @@ def generate_dev(
         package_config = PACKAGES[fet_config.package]
 
         # UUIDs
-        uuid_dev = uuid('dev', full_name, 'dev')
+        uuid_dev = uuid_cache.get('dev', full_name, 'dev')
         uuid_pkg = package_config.uuid_pkg
         uuid_pads = package_config.uuid_pads
         uuid_signals = [SIGNALS[s] for s in fet_config.signals]
@@ -173,7 +152,7 @@ def generate_dev(
             f.write('\n')
 
 
-if __name__ == '__main__':
+def main() -> None:
     # Diodes Incorporated
     # fmt: off
     generate_dev(
@@ -260,4 +239,8 @@ if __name__ == '__main__':
         ],
     )
     # fmt: on
-    save_cache(uuid_cache_file, uuid_cache)
+
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

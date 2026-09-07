@@ -17,11 +17,10 @@ import math
 import sys
 from functools import partial
 from os import makedirs, path
-from uuid import uuid4
 
 from typing import Callable, Iterable, Optional, Tuple
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Align,
     Angle,
@@ -117,29 +116,7 @@ KIND_WIRE_CONNECTOR = 'wireconnector'
 KIND_SCREW_TERMINAL = 'screwterminal'
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_connectors.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, kind: str, variant: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        kind:
-            For example 'pinheader' or 'pinsocket'.
-        variant:
-            For example '1x5-D1.1' or '1x13'.
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}-{}'.format(category, kind, variant, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
 def get_y(pin_number: int, pin_count: int, rows: int, spacing: float, grid_align: bool) -> float:
@@ -214,7 +191,7 @@ def generate_pkg(
             variant = f'{rows}x{per_row}-D{drill:.1f}'
 
             def _uuid(identifier: str) -> str:
-                return uuid(category, kind, variant, identifier)
+                return uuid_cache.get(category, kind, variant, identifier)
 
             uuid_pkg = _uuid('pkg')
             uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(i)]
@@ -401,7 +378,7 @@ def generate_silkscreen_female(
     pin_count: int,
     rows: int,
 ) -> Polygon:
-    uuid_polygon = uuid(category, kind, variant, 'polygon-contour')
+    uuid_polygon = uuid_cache.get(category, kind, variant, 'polygon-contour')
 
     x = 1.27 * rows + line_width / 2
     top_offset = spacing / 2 + line_width / 2
@@ -431,7 +408,7 @@ def generate_silkscreen_male(
     pin_count: int,
     rows: int,
 ) -> Polygon:
-    uuid_polygon = uuid(category, kind, variant, 'polygon-contour')
+    uuid_polygon = uuid_cache.get(category, kind, variant, 'polygon-contour')
 
     per_row = pin_count // rows
     x_outer = 1.27 * rows + line_width / 2
@@ -577,7 +554,7 @@ def generate_sym(
         variant = '{}x{}'.format(rows, per_row)
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, kind, variant, identifier)
+            return uuid_cache.get(category, kind, variant, identifier)
 
         uuid_sym = _uuid('sym')
         uuid_pins = [_uuid('pin-{}'.format(p)) for p in range(i)]
@@ -762,14 +739,14 @@ def generate_cmp(
         variant = '{}x{}'.format(rows, per_row)
 
         def _uuid(identifier: str) -> str:
-            return uuid(category, kind, variant, identifier)
+            return uuid_cache.get(category, kind, variant, identifier)
 
         uuid_cmp = _uuid('cmp')
-        uuid_pins = [uuid('sym', kind, variant, 'pin-{}'.format(p)) for p in range(i)]
+        uuid_pins = [uuid_cache.get('sym', kind, variant, 'pin-{}'.format(p)) for p in range(i)]
         uuid_signals = [_uuid('signal-{}'.format(p)) for p in range(i)]
         uuid_variant = _uuid('variant-default')
         uuid_gate = _uuid('gate-default')
-        uuid_symbol = uuid('sym', kind, variant, 'sym')
+        uuid_symbol = uuid_cache.get('sym', kind, variant, 'sym')
 
         # General info
         component = Component(
@@ -858,15 +835,15 @@ def generate_dev(
             broad_variant = '{}x{}'.format(rows, per_row)
 
             def _uuid(identifier: str) -> str:
-                return uuid(category, kind, variant, identifier)
+                return uuid_cache.get(category, kind, variant, identifier)
 
             uuid_dev = _uuid('dev')
-            uuid_cmp = uuid('cmp', kind, broad_variant, 'cmp')
+            uuid_cmp = uuid_cache.get('cmp', kind, broad_variant, 'cmp')
             uuid_signals = [
-                uuid('cmp', kind, broad_variant, 'signal-{}'.format(p)) for p in range(i)
+                uuid_cache.get('cmp', kind, broad_variant, 'signal-{}'.format(p)) for p in range(i)
             ]
-            uuid_pkg = uuid('pkg', kind, variant, 'pkg')
-            uuid_pads = [uuid('pkg', kind, variant, 'pad-{}'.format(p)) for p in range(i)]
+            uuid_pkg = uuid_cache.get('pkg', kind, variant, 'pkg')
+            uuid_pads = [uuid_cache.get('pkg', kind, variant, 'pad-{}'.format(p)) for p in range(i)]
 
             # General info
             lines.append('(librepcb_device {}'.format(uuid_dev))
@@ -910,7 +887,7 @@ def generate_dev(
             )
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1272,4 +1249,7 @@ if __name__ == '__main__':
         create_date='2018-10-17T19:13:41Z',
     )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

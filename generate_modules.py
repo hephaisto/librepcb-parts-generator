@@ -7,13 +7,13 @@ from os import path
 import cadquery as cq
 
 from cadquery_helpers import StepAssembly, StepColor, StepConstants
-from common import init_cache
+from common import UuidCache
 
 CU_THICKNESS = 0.05
 
 
 # Initialize UUID caches
-connectors_uuid_cache = init_cache('uuid_cache_connectors.csv')
+connectors_uuid_cache = UuidCache('uuid_cache_connectors.csv')
 
 
 def get_connector_pkg_uuid(kind: str, pin_count: int, rows: int, drill: float, obj: str) -> str:
@@ -21,7 +21,7 @@ def get_connector_pkg_uuid(kind: str, pin_count: int, rows: int, drill: float, o
     Get the UUID of a connector package item. See generate_connectors.py for details.
     """
     key = f'pkg-{kind}-{rows}x{pin_count // rows}-d{drill:.1f}-{obj}'
-    return connectors_uuid_cache[key]
+    return connectors_uuid_cache.get(key)
 
 
 def load_connector_step_model(kind: str, pin_count: int, rows: int, drill: float) -> cq.Assembly:
@@ -394,7 +394,7 @@ def generate_rpi_pico(name: str, bottom_pads: bool, headers: bool) -> None:
     assembly.save(out_path, fused=False)
 
 
-if __name__ == '__main__':
+def main() -> None:
     # Arduino
     generate_arduino_uno_r3(name='With Uno', with_board=True)
     generate_arduino_uno_r3(name='Only Headers', with_board=False)
@@ -408,3 +408,7 @@ if __name__ == '__main__':
     generate_rpi_pico('Pico (THT)', bottom_pads=True, headers=True)
     generate_rpi_pico('Pico W (SMD)', bottom_pads=False, headers=False)
     generate_rpi_pico('Pico W (THT)', bottom_pads=False, headers=True)
+
+
+if __name__ == '__main__':
+    main()

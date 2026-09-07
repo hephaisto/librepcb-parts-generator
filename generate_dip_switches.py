@@ -4,11 +4,10 @@ Generate DIP switches
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import List, Optional, Tuple, Union
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.attribute import Attribute, AttributeType
 from entities.common import (
     Align,
@@ -92,19 +91,10 @@ from entities.symbol import Pin as SymbolPin
 
 generator = 'librepcb-parts-generator (generate_dip_switches.py)'
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_dip_switches.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_dip_switches.csv')
 
 
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
-
-
-def get_y(pin_index: int, circuits: int, pitch: float) -> float:
+def get_y(family: 'Family', pin_index: int, circuits: int, pitch: float) -> float:
     y0 = (circuits - 1) * pitch / 2
     dy = y0 - family.lead_config.pitch_y * (pin_index % circuits)
     if pin_index < circuits:
@@ -223,7 +213,7 @@ class Model:
 
     def uuid_key(self, family: Family) -> str:
         return (
-            '{}-{}'.format(family.pkg_name_prefix, model.name)
+            '{}-{}'.format(family.pkg_name_prefix, self.name)
             .lower()
             .replace(' ', '')
             .replace(',', 'p')
@@ -231,7 +221,7 @@ class Model:
 
     def get_description(self, family: Family) -> str:
         s = f'{self.circuits}x DIP switch from {family.manufacturer}.'
-        s += f'\n\nBody Size: {family.body_size_x:.2f} x {model.body_size_y:.2f} mm'
+        s += f'\n\nBody Size: {family.body_size_x:.2f} x {self.body_size_y:.2f} mm'
         if isinstance(family.lead_config, ThtLeadConfig):
             s += f'\nPitch: {family.lead_config.pitch_x:.2f} x {family.lead_config.pitch_y:.2f} mm'
         if isinstance(family.lead_config, GullWingLeadConfig):
@@ -267,7 +257,7 @@ def generate_sym(
     full_name = name.format(circuits=circuits, variant=variant)
 
     def _uuid(identifier: str) -> str:
-        return uuid('sym', f'{variant.id}-{circuits:02}', identifier)
+        return uuid_cache.get('sym', f'{variant.id}-{circuits:02}', identifier)
 
     uuid_sym = _uuid('sym')
 
@@ -456,7 +446,7 @@ def generate_cmp(
     full_name = name.format(circuits=circuits)
 
     def _uuid(identifier: str) -> str:
-        return uuid('cmp', f'{circuits:02}', identifier)
+        return uuid_cache.get('cmp', f'{circuits:02}', identifier)
 
     uuid_cmp = _uuid('cmp')
 
@@ -500,7 +490,7 @@ def generate_cmp(
     for variant in [VARIANT_EU, VARIANT_US]:
         gate = Gate(
             _uuid(f'combined-{variant.id}-gate'),
-            SymbolUUID(uuid_cache[f'sym-{variant.id}-{circuits:02}-sym']),
+            SymbolUUID(uuid_cache.get(f'sym-{variant.id}-{circuits:02}-sym')),
             Position(0, 0),
             Rotation(0),
             Required(True),
@@ -508,8 +498,10 @@ def generate_cmp(
         )
         for circuit in range(1, circuits + 1):
             for letter in ['a', 'b']:
-                pin_uuid = uuid_cache[f'sym-{variant.id}-{circuits:02}-pin-{circuit:02}{letter}']
-                sig_uuid = uuid_cache[f'cmp-{circuits:02}-signal-{circuit:02}{letter}']
+                pin_uuid = uuid_cache.get(
+                    f'sym-{variant.id}-{circuits:02}-pin-{circuit:02}{letter}'
+                )
+                sig_uuid = uuid_cache.get(f'cmp-{circuits:02}-signal-{circuit:02}{letter}')
                 display_number = (circuits > 1) and (letter == 'a')
                 gate.add_pin_signal_map(
                     PinSignalMap(
@@ -543,15 +535,15 @@ def generate_cmp(
             for circuit in range(1, circuits + 1):
                 gate = Gate(
                     _uuid(f'split-{variant.id}-gate-{circuit:02}'),
-                    SymbolUUID(uuid_cache[f'sym-{variant.id}-01-sym']),
+                    SymbolUUID(uuid_cache.get(f'sym-{variant.id}-01-sym')),
                     Position(0, y0 - (circuit - 1) * spacing),
                     Rotation(0),
                     Required(True),
                     Suffix(str(circuit)),
                 )
                 for letter in ['a', 'b']:
-                    pin_uuid = uuid_cache[f'sym-{variant.id}-01-pin-01{letter}']
-                    sig_uuid = uuid_cache[f'cmp-{circuits:02}-signal-{circuit:02}{letter}']
+                    pin_uuid = uuid_cache.get(f'sym-{variant.id}-01-pin-01{letter}')
+                    sig_uuid = uuid_cache.get(f'cmp-{circuits:02}-signal-{circuit:02}{letter}')
                     gate.add_pin_signal_map(
                         PinSignalMap(
                             pin_uuid,
@@ -576,7 +568,7 @@ def generate_pkg(
     full_name = family.pkg_name_prefix + '_' + model.name.replace(' ', '_')
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', model.uuid_key(family), identifier)
+        return uuid_cache.get('pkg', model.uuid_key(family), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -617,7 +609,7 @@ def generate_pkg(
         package.add_pad(PackagePad(uuid=uuid_pkg_pad, name=Name(str(i + 1))))
         uuid_fpt_pad = _uuid('default-pad-{}'.format(i + 1))
         x = (family.lead_config.pitch_x / 2) * (-1 if (i < model.circuits) else 1)
-        y = get_y(i, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, i, model.circuits, family.lead_config.pitch_y)
         if isinstance(family.lead_config, ThtLeadConfig):
             footprint.add_pad(
                 FootprintPad(
@@ -719,7 +711,7 @@ def generate_pkg(
         text_x += family.lead_config.pad_size_x / 2
     text_x = (text_x + (-window_dx - (line_width / 2))) / 2
     for circuit in range(model.circuits):
-        y = get_y(circuit, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, circuit, model.circuits, family.lead_config.pitch_y)
         footprint.add_polygon(
             Polygon(
                 uuid=_uuid(f'default-polygon-documentation-window-{circuit}'),
@@ -773,7 +765,7 @@ def generate_pkg(
     dx = (family.body_size_x / 2) + (line_width / 2)
     dx_pin1 = (family.lead_config.pitch_x / 2) - (line_width / 2)
     dy = (model.body_size_y / 2) + (line_width / 2)
-    dy_inner = get_y(0, model.circuits, family.lead_config.pitch_y)
+    dy_inner = get_y(family, 0, model.circuits, family.lead_config.pitch_y)
     if isinstance(family.lead_config, ThtLeadConfig):
         dx_pin1 += family.lead_config.pad_diameter / 2
         dy_inner += (family.lead_config.pad_diameter / 2) + (line_width / 2) + 0.15
@@ -813,7 +805,9 @@ def generate_pkg(
             Vertex(Position(right, top), Angle(0)),
         ]
         for i in range(model.circuits):
-            y = get_y(model.circuits * 2 - i - 1, model.circuits, family.lead_config.pitch_y)
+            y = get_y(
+                family, model.circuits * 2 - i - 1, model.circuits, family.lead_config.pitch_y
+            )
             outline_vertices += [
                 Vertex(Position(right, y + leads_dy), Angle(0)),
                 Vertex(Position(right_leads, y + leads_dy), Angle(0)),
@@ -825,7 +819,7 @@ def generate_pkg(
             Vertex(Position(left, bottom), Angle(0)),
         ]
         for i in range(model.circuits):
-            y = get_y(model.circuits - i - 1, model.circuits, family.lead_config.pitch_y)
+            y = get_y(family, model.circuits - i - 1, model.circuits, family.lead_config.pitch_y)
             outline_vertices += [
                 Vertex(Position(left, y - leads_dy), Angle(0)),
                 Vertex(Position(left_leads, y - leads_dy), Angle(0)),
@@ -858,7 +852,7 @@ def generate_pkg(
     right = -left
     if isinstance(family.lead_config, GullWingLeadConfig):
         top_leads = (
-            get_y(0, model.circuits, family.lead_config.pitch_y)
+            get_y(family, 0, model.circuits, family.lead_config.pitch_y)
             + (family.lead_config.width / 2)
             + courtyard_excess
         )
@@ -969,7 +963,7 @@ def generate_3d_model(
         .fillet(0.2)
     )
     for i in range(model.circuits):
-        y = get_y(i, model.circuits, family.lead_config.pitch_y)
+        y = get_y(family, i, model.circuits, family.lead_config.pitch_y)
         body = body.workplane(origin=(0, y), offset=family.body_size_z / 2).box(
             family.window_size[0],
             family.window_size[1],
@@ -1064,14 +1058,20 @@ def generate_3d_model(
             'lead-{}'.format(i + 1),
             StepColor.LEAD_SMT,
             location=cq.Location(
-                (lead_xz[0], get_y(i, model.circuits, family.lead_config.pitch_y), lead_xz[1])
+                (
+                    lead_xz[0],
+                    get_y(family, i, model.circuits, family.lead_config.pitch_y),
+                    lead_xz[1],
+                )
             ),
         )
         assembly.add_body(
             actuator,
             'actuator-{}'.format(i + 1),
             cq.Color(family.actuator_color),
-            location=cq.Location((0, get_y(i, model.circuits, family.lead_config.pitch_y), 0)),
+            location=cq.Location(
+                (0, get_y(family, i, model.circuits, family.lead_config.pitch_y), 0)
+            ),
         )
 
     # Save without fusing for massively better minification!
@@ -1090,7 +1090,7 @@ def generate_dev(
     full_name = f'{family.dev_name_prefix} {model.name}'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', model.uuid_key(family), identifier)
+        return uuid_cache.get('dev', model.uuid_key(family), identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -1107,15 +1107,15 @@ def generate_dev(
         deprecated=Deprecated(False),
         generated_by=GeneratedBy(''),
         categories=[Category('e29f0cb3-ef6d-4203-b854-d75150cbae0b')],
-        component_uuid=ComponentUUID(uuid_cache[f'cmp-{model.circuits:02}-cmp']),
-        package_uuid=PackageUUID(uuid_cache['pkg-' + model.uuid_key(family) + '-pkg']),
+        component_uuid=ComponentUUID(uuid_cache.get(f'cmp-{model.circuits:02}-cmp')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg-' + model.uuid_key(family) + '-pkg')),
     )
 
     for pad in range(1, (model.circuits * 2) + 1):
         circuit = pad if (pad <= model.circuits) else ((model.circuits * 2) + 1 - pad)
         letter = 'a' if (pad <= model.circuits) else 'b'
-        signal_uuid = uuid_cache[f'cmp-{model.circuits:02}-signal-{circuit:02}{letter}']
-        pad_uuid = uuid_cache[f'pkg-{model.uuid_key(family)}-pad-{pad}']
+        signal_uuid = uuid_cache.get(f'cmp-{model.circuits:02}-signal-{circuit:02}{letter}')
+        pad_uuid = uuid_cache.get(f'pkg-{model.uuid_key(family)}-pad-{pad}')
         device.add_pad(ComponentPad(pad_uuid, SignalUUID(signal_uuid)))
 
     for part in model.parts:
@@ -1134,7 +1134,7 @@ def generate_dev(
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -1302,4 +1302,7 @@ if __name__ == '__main__':
                     model=model,
                 )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

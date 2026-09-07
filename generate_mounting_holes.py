@@ -8,11 +8,10 @@ Generate mounting hole packages & devices
 """
 
 from os import path
-from uuid import uuid4
 
 from typing import Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Angle,
     Author,
@@ -68,16 +67,7 @@ stopmask_excess = 0.05
 courtyard_excess = 0.5
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_mounting_holes.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_mounting_holes.csv')
 
 
 def generate_pkg(
@@ -100,7 +90,7 @@ Generated with {generator}
     keywords = f'mounting,hole,pad,drill,screw,{name},{hole_diameter}mm,{pad_diameter}mm'
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', name.lower(), identifier)
+        return uuid_cache.get('pkg', name.lower(), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -299,7 +289,7 @@ Generated with {generator}
     keywords = f'mounting,hole,pad,drill,screw,{name},{hole_diameter}mm,{pad_diameter}mm'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', name.lower(), identifier)
+        return uuid_cache.get('dev', name.lower(), identifier)
 
     uuid_dev = _uuid('dev')
 
@@ -320,12 +310,13 @@ Generated with {generator}
             Category('8ca4f9fb-3dd3-4c1e-a097-6601b437bbc6'),
         ],
         component_uuid=ComponentUUID('5c0f6cd9-dced-46ae-8098-6cccaa8726ec'),
-        package_uuid=PackageUUID(uuid('pkg', name.lower(), 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', name.lower(), 'pkg')),
     )
 
     device.add_pad(
         ComponentPad(
-            uuid('pkg', name.lower(), 'pad'), SignalUUID('c8721bab-6c90-43f6-8135-c32fce7aecc0')
+            uuid_cache.get('pkg', name.lower(), 'pad'),
+            SignalUUID('c8721bab-6c90-43f6-8135-c32fce7aecc0'),
         )
     )
     device.add_approval('(approved no_parts)')
@@ -333,7 +324,7 @@ Generated with {generator}
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     # Maximum head diameters of standard screws:
     #
     # | Screw | ISO4762 | ISO7380 | ISO14580 | DIN965 |
@@ -374,4 +365,7 @@ if __name__ == '__main__':
             pad_diameter=pad_diameter,
         )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

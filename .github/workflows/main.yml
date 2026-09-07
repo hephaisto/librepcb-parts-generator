@@ -33,23 +33,4 @@ jobs:
           -print0 | sort -z | xargs -t0L1 -I {} python {} --3d
       - name: Check for diffs in UUID caches
         run: git diff --exit-code
-      - name: Check for stale entries in UUID caches
-        run: |
-          stat --format="%s %n" *.csv | sort -k2 > sizes_before.txt
-          find . -maxdepth 1 -name '*.csv' \
-            -not -name 'uuid_cache_stm_mcu.csv' \
-            -not -name 'uuid_cache_connectors.csv' \
-            -not -name 'uuid_cache_dfn.csv' \
-            -not -name 'uuid_cache_dip.csv' \
-            -not -name 'uuid_cache_so.csv' \
-            -delete
-          find . -maxdepth 1 -name 'generate_*.py' \
-            -not -name 'generate_stm_mcu.py' \
-            -not -name 'generate_modules.py' \
-            -not -name 'generate_connectors.py' \
-            -not -name 'generate_dfn.py' \
-            -not -name 'generate_dip.py' \
-            -not -name 'generate_so.py' \
-            -print0 | sort -z | xargs -t0L1 python
-          stat --format="%s %n" *.csv | sort -k2 > sizes_after.txt
-          diff sizes_before.txt sizes_after.txt
+

@@ -5,12 +5,11 @@ Generate DFN packages
 
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import List, Optional
 
+from common import UuidCache, now
 from common import format_ipc_dimension as fd
-from common import init_cache, now, save_cache
 from dfn_configs import JEDEC_CONFIGS, THIRD_CONFIGS, DfnConfig
 from entities.common import (
     Align,
@@ -77,27 +76,7 @@ MIN_CLEARANCE = 0.20  # For checking only --> warns if violated
 MIN_TRACE = 0.10
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_dfn.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified pin.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        full_name:
-            For example "SOIC127P762X120-16".
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_dfn.csv', stale_check=False)
 
 
 def get_y(pin_number: int, pin_count: int, spacing: float) -> float:
@@ -170,7 +149,7 @@ def generate_pkg(
         full_keywords = 'dfn{},{}'.format(config.pin_count, keywords)
 
     def _uuid(identifier: str) -> str:
-        return uuid(category, full_name, identifier)
+        return uuid_cache.get(category, full_name, identifier)
 
     uuid_pkg = _uuid('pkg')
     uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(1, config.pin_count + 1)]
@@ -642,7 +621,7 @@ def generate_3d(
     assembly.save(out_path, fused=False)
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -720,4 +699,7 @@ if __name__ == '__main__':
             else:
                 print('Duplicate name found: {}'.format(name))
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

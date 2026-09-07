@@ -11,11 +11,10 @@ Implemented so far:
 
 from math import sqrt
 from os import path
-from uuid import uuid4
 
 from typing import Iterable, Optional, Tuple
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.common import (
     Align,
     Angle,
@@ -75,30 +74,8 @@ courtyard_offset = 0.5
 pkg_text_height = 1.0
 sym_text_height = 2.54
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_idc.csv'
-uuid_cache = init_cache(uuid_cache_file)
-
-# Initialize UUID cache for connectors
-uuid_cache_connectors = init_cache('uuid_cache_connectors.csv')
-
-
-def uuid(category: str, variant: str, identifier: str) -> str:
-    """
-    Return a uuid for the specified object.
-
-    Params:
-        category:
-            For example 'cmp' or 'pkg'.
-        variant:
-            For example 'cnctech-3020-06-0300' or '1x13'.
-        identifier:
-            For example 'pad-1' or 'pin-13'.
-    """
-    key = '{}-{}-{}'.format(category, variant, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache = UuidCache('uuid_cache_idc.csv')
+uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
 class Coord:
@@ -213,7 +190,7 @@ class Config:
 
 def generate_pkg(config: Config) -> None:
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', config.identifier, identifier)
+        return uuid_cache.get('pkg', config.identifier, identifier)
 
     uuid_pkg = _uuid('pkg')
     uuid_pads = [_uuid('pad-{}'.format(p)) for p in range(config.pin_count)]
@@ -533,12 +510,11 @@ def generate_pkg(config: Config) -> None:
 
 def generate_dev(config: Config) -> None:
     def _uuid(category: str, identifier: str) -> str:
-        return uuid(category, config.identifier, identifier)
+        return uuid_cache.get(category, config.identifier, identifier)
 
     def _uuid_cmp(identifier: str) -> str:
         variant = '{}x{}'.format(2, config.pin_count // 2)
-        key = 'cmp-pinheader-{}-{}'.format(variant, identifier).lower().replace(' ', '~')
-        return uuid_cache_connectors[key]
+        return uuid_cache_connectors.get('cmp', 'pinheader', variant, identifier)
 
     uuid_dev = _uuid('dev', 'dev')
     uuid_pkg = _uuid('pkg', 'pkg')
@@ -577,7 +553,7 @@ def generate_dev(config: Config) -> None:
     print('Wrote device {}: {}'.format(uuid_dev, config.dev_name))
 
 
-if __name__ == '__main__':
+def main() -> None:
     # CNC Tech
     configs = (
         [
@@ -706,4 +682,7 @@ if __name__ == '__main__':
         generate_pkg(config=config)
         generate_dev(config=config)
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

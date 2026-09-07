@@ -5,11 +5,10 @@ Generate screw terminal packages & devices
 import math
 import sys
 from os import path
-from uuid import uuid4
 
 from typing import Any, Callable, List, Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.attribute import Attribute, AttributeType
 from entities.common import (
     Align,
@@ -74,18 +73,9 @@ line_width = 0.2
 courtyard_excess = 0.4
 
 
-# Initialize UUID cache
-uuid_cache_file = 'uuid_cache_screw_terminals.csv'
-uuid_cache = init_cache(uuid_cache_file)
+uuid_cache = UuidCache('uuid_cache_screw_terminals.csv')
 
-uuid_cache_connectors = init_cache('uuid_cache_connectors.csv')
-
-
-def uuid(category: str, full_name: str, identifier: str) -> str:
-    key = '{}-{}-{}'.format(category, full_name, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache:
-        uuid_cache[key] = str(uuid4())
-    return uuid_cache[key]
+uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 
 def create_screw_diagonal(y: float, diameter: float, dir: int) -> List[Vertex]:
@@ -165,7 +155,7 @@ class Model:
 
     def uuid_key(self, family: Family) -> str:
         return (
-            '{}-{}'.format(family.pkg_name_prefix, model.name)
+            '{}-{}'.format(family.pkg_name_prefix, self.name)
             .lower()
             .replace(' ', '')
             .replace(',', 'p')
@@ -215,7 +205,7 @@ def generate_pkg(
     full_name = family.pkg_name_prefix + '_' + model.name.replace(' ', '_')
 
     def _uuid(identifier: str) -> str:
-        return uuid('pkg', model.uuid_key(family), identifier)
+        return uuid_cache.get('pkg', model.uuid_key(family), identifier)
 
     uuid_pkg = _uuid('pkg')
 
@@ -627,16 +617,17 @@ def generate_dev(
     full_name = f'{family.dev_name_prefix} {model.name}'
 
     def _uuid(identifier: str) -> str:
-        return uuid('dev', model.uuid_key(family), identifier)
+        return uuid_cache.get('dev', model.uuid_key(family), identifier)
 
     uuid_dev = _uuid('dev')
 
     print('Generating {}: {}'.format(full_name, uuid_dev))
 
     connector_uuid_stub = f'cmp-screwterminal-1x{model.circuits}'
-    component_uuid = uuid_cache_connectors[f'{connector_uuid_stub}-cmp']
+    component_uuid = uuid_cache_connectors.get(f'{connector_uuid_stub}-cmp')
     signal_uuids = [
-        uuid_cache_connectors[f'{connector_uuid_stub}-signal-{i}'] for i in range(model.circuits)
+        uuid_cache_connectors.get(f'{connector_uuid_stub}-signal-{i}')
+        for i in range(model.circuits)
     ]
 
     device = Device(
@@ -651,11 +642,11 @@ def generate_dev(
         generated_by=GeneratedBy(''),
         categories=[Category('f9db4ef5-2220-462a-adff-deac8402ecf0')],
         component_uuid=ComponentUUID(component_uuid),
-        package_uuid=PackageUUID(uuid('pkg', model.uuid_key(family), 'pkg')),
+        package_uuid=PackageUUID(uuid_cache.get('pkg', model.uuid_key(family), 'pkg')),
     )
 
     for i in range(model.circuits):
-        pad_uuid = uuid('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
+        pad_uuid = uuid_cache.get('pkg', model.uuid_key(family), 'pad-{}'.format(i + 1))
         device.add_pad(ComponentPad(pad_uuid, SignalUUID(signal_uuids[i])))
 
     device.add_part(
@@ -684,7 +675,7 @@ def generate_dev(
     device.serialize(path.join('out', library, 'dev'))
 
 
-if __name__ == '__main__':
+def main() -> None:
     if '--help' in sys.argv or '-h' in sys.argv:
         print(f'Usage: {sys.argv[0]} [--3d]')
         print()
@@ -846,4 +837,7 @@ if __name__ == '__main__':
             model=model,
         )
 
-    save_cache(uuid_cache_file, uuid_cache)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()

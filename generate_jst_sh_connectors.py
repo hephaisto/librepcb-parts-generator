@@ -8,11 +8,10 @@ see
 
 import math
 from os import path
-from uuid import uuid4
 
 from typing import Iterable, Optional
 
-from common import init_cache, now, save_cache
+from common import UuidCache, now
 from entities.attribute import StringAttribute
 from entities.common import (
     Align,
@@ -75,10 +74,9 @@ header_line_width = 0.2
 legend_header_spacing = 0
 legend_line_width = 0.2
 
-uuid_cache_jst_file = 'uuid_cache_jst_sh_connectors.csv'
-uuid_cache_jst = init_cache(uuid_cache_jst_file)
+uuid_cache = UuidCache('uuid_cache_sh_connectors.csv')
 
-uuid_cache_connectors = init_cache('uuid_cache_connectors.csv')
+uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
 # we use these patterns multiple times in the code
 # that is why we define them here, single source of truth
@@ -157,15 +155,8 @@ def variant(mounting_variant: str, circuits: int) -> str:
     return f'{mounting_variant}{circuits}'
 
 
-def uuid(category: str, kind: str, variant: str, identifier: str) -> str:
-    key = '{}-{}-{}-{}'.format(category, kind, variant, identifier).lower().replace(' ', '~')
-    if key not in uuid_cache_jst:
-        uuid_cache_jst[key] = str(uuid4())
-    return uuid_cache_jst[key]
-
-
 def connector_uuid(category: str, connector: Connector, identifier: str) -> str:
-    return uuid(
+    return uuid_cache.get(
         category, connector.type, variant(connector.subtype, connector.circuits), identifier
     )
 
@@ -735,9 +726,9 @@ def generate_dev(
     suction_cap_variant_available: bool,
 ) -> Device:
     connector_uuid_stub = f'cmp-pinheader-1x{connector.circuits}'
-    component_uuid = uuid_cache_connectors[f'{connector_uuid_stub}-cmp']
+    component_uuid = uuid_cache_connectors.get(f'{connector_uuid_stub}-cmp')
     signal_uuids = [
-        uuid_cache_connectors[f'{connector_uuid_stub}-signal-{i}']
+        uuid_cache_connectors.get(f'{connector_uuid_stub}-signal-{i}')
         for i in range(connector.circuits)
     ]
 
@@ -834,7 +825,7 @@ def generate_jst(
         print(f'wrote device {dev.name.value}: {dev.uuid}')
 
 
-if __name__ == '__main__':
+def main() -> None:
     create_date = '2024-05-03T17:19:09Z'
 
     # units in mm
@@ -916,4 +907,7 @@ if __name__ == '__main__':
         rotation=90,
     )
 
-    save_cache(uuid_cache_jst_file, uuid_cache_jst)
+
+if __name__ == '__main__':
+    with uuid_cache:
+        main()
