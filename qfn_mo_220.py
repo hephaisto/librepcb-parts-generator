@@ -58,6 +58,7 @@ lead_widths = {
 @dataclass
 class VariantRow:
     tag: str
+    e: float
     D: float
     E: float
     D1: Optional[float]
@@ -74,11 +75,11 @@ class VariantRow:
 # other values are derived from variation designators
 # fmt: off
 variant_table_definition = [
-    #           tag       D      E      D1     E1     D2     E2    L     ND  NE
-    VariantRow('xEEB  ',  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1), # smallest
-    VariantRow('xRRE-2', 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27), # biggest
-    VariantRow('xGGD-9',  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('TI', 'RGE0024B'), ('NXP', 'SOT616-1')]), # noqa: E501
-    VariantRow('xGGD-6',  4.00,  4.00,  None,  None,  2.65,  2.80, 0.40,  6,  6, names=[('NXP', 'SOT616-3')]),
+    #           tag      e      D      E      D1     E1     D2     E2    L     ND  NE
+    VariantRow('xEEB  ', 0.80,  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1), # smallest
+    VariantRow('xRRE-2', 0.40, 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27), # biggest
+    VariantRow('xGGD-9', 0.50,  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('TI', 'RGE0024B'), ('NXP', 'SOT616-1')]), # noqa: E501
+    VariantRow('xGGD-6', 0.50,  4.00,  4.00,  None,  None,  2.65,  2.80, 0.40,  6,  6, names=[('NXP', 'SOT616-3')]),
 ]
 # fmt: on
 
@@ -94,9 +95,10 @@ def load_variants() -> list[Variant]:
         pitch_code = row.tag[3]
         body_size_y = body_size[width_code]
         body_size_x = body_size[length_code]
+        pitch = terminal_pitch[pitch_code]
         assert body_size_x == row.D
         assert body_size_y == row.E
-        pitch = terminal_pitch[pitch_code]
+        assert pitch == row.e
         num_pins = 2 * row.ND + 2 * row.NE
         exposed_pad = Size(x=row.D2, y=row.E2) if row.D2 and row.E2 else None
         lead_length = row.L
