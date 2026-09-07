@@ -74,7 +74,7 @@ header_line_width = 0.2
 legend_header_spacing = 0
 legend_line_width = 0.2
 
-uuid_cache_jst = UuidCache('uuid_cache_jst_sh_connectors.csv')
+uuid_cache = UuidCache('uuid_cache_sh_connectors.csv')
 
 uuid_cache_connectors = UuidCache('uuid_cache_connectors.csv', stale_check=False)
 
@@ -156,7 +156,7 @@ def variant(mounting_variant: str, circuits: int) -> str:
 
 
 def connector_uuid(category: str, connector: Connector, identifier: str) -> str:
-    return uuid_cache_jst.get(
+    return uuid_cache.get(
         category, connector.type, variant(connector.subtype, connector.circuits), identifier
     )
 
@@ -909,5 +909,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    with uuid_cache_jst:
+    with uuid_cache:
         main()
