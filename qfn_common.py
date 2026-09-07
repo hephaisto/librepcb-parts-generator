@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from common import format_ipc_dimension as fp
 
@@ -48,6 +48,8 @@ class Variant:
     num_pins_north_south: int  # NE
     min_clearance: float  # K
     additional_names: list[tuple[str, str]]
+    # relative to "lead width / 2", e.g. the default gives R=0.05 for a lead width of 0.25
+    pad_radius: float = field(default=0.4)
 
     @property
     def num_pins(self) -> int:

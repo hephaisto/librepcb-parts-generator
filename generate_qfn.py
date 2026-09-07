@@ -260,7 +260,7 @@ def generate_pkg(
                     position=Position(center_x, center_y),
                     rotation=Rotation(0 if side in ('west', 'east') else 90),
                     size=Size(pad_width, variant.lead_width),
-                    radius=ShapeRadius(0),
+                    radius=ShapeRadius(variant.pad_radius),
                     stop_mask=StopMaskConfig(StopMaskConfig.AUTO),
                     solder_paste=SolderPasteConfig.AUTO,
                     copper_clearance=CopperClearance(0.0),
