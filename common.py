@@ -39,6 +39,7 @@ class UuidCache:
         if not exception and self.entered:
             self.check_stale()
             self.save_cache()
+            self.entered = False
 
     def save_cache(self) -> None:
         print(f'Saving cache: {self.filename}')
