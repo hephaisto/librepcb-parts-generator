@@ -376,16 +376,21 @@ def generate_pkg(
         )
 
         # silkscreen
-        corner_size = 0.4
         silk_x = body_x + silkscreen_line_width / 2
         silk_y = body_y + silkscreen_line_width / 2
+        silk_x_end = min(
+            silk_x, variant.num_pins_north_south * variant.pitch / 2 + silkscreen_line_width
+        )
+        silk_y_end = min(
+            silk_y, variant.num_pins_east_west * variant.pitch / 2 + silkscreen_line_width
+        )
 
         for x_sign in (-1, 1):
             for y_sign in (-1, 1):
                 vertices = [
-                    (silk_x - corner_size, silk_y),
+                    (silk_x_end, silk_y),
                     (silk_x, silk_y),
-                    (silk_x, silk_y - corner_size),
+                    (silk_x, silk_y_end),
                 ]
 
                 footprint.add_polygon(
