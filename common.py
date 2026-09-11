@@ -198,14 +198,11 @@ def grid_solderpaste(
     pitch_y = (y_max - y_min) / num_y
     size_x = pitch_x * fill_factor
     size_y = pitch_y * fill_factor
-    print(f'  {num_x} {num_y}')
-    print(f'    {pitch_x} {pitch_y}')
 
     for ix in range(num_x):
         for iy in range(num_y):
             center_x = pitch_x * (ix - num_x / 2 + 0.5)
             center_y = pitch_y * (iy - num_y / 2 + 0.5)
-            print(f'    {ix} {iy} {center_x} {center_y}')
             yield Polygon(
                 uuid=uuid_cache.get('solderpaste', ix, iy),
                 layer=Layer('top_solder_paste'),
