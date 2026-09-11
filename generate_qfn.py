@@ -224,6 +224,12 @@ def generate_pkg(
         body_x = variant.body_size_x / 2
         body_y = variant.body_size_y / 2
 
+        stop_mask_config = StopMaskConfig(
+            StopMaskConfig.AUTO
+            if variant.pitch >= 0.5
+            else ((variant.pitch - variant.lead_width) * 0.4)
+        )
+
         # normal pads
         for i_pad in range(variant.num_pins):
             pad_name = i_pad + 1
@@ -267,7 +273,7 @@ def generate_pkg(
                     rotation=Rotation(0 if side in ('west', 'east') else 90),
                     size=Size(pad_width, variant.lead_width),
                     radius=ShapeRadius(variant.pad_radius),
-                    stop_mask=StopMaskConfig(StopMaskConfig.AUTO),
+                    stop_mask=stop_mask_config,
                     solder_paste=SolderPasteConfig.AUTO,
                     copper_clearance=CopperClearance(0.0),
                     function=PadFunction.STANDARD_PAD,
