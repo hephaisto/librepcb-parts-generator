@@ -78,8 +78,8 @@ variant_table_definition = [
     #           tag      e      D      E      D1     E1     D2     E2    L     ND  NE
     VariantRow('xEEB  ', 0.80,  3.00,  3.00,  2.75,  2.75,  0.70,  0.70, 0.55,  1,  1), # smallest
     VariantRow('xRRE-2', 0.40, 12.00, 12.00, 11.75, 11.75, 10.10, 10.10, 0.40, 27, 27), # biggest
-    VariantRow('xGGD-9', 0.50,  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('TI', 'RGE0024B'), ('NXP', 'SOT616-1')]), # noqa: E501
-    VariantRow('xGGD-6', 0.50,  4.00,  4.00,  None,  None,  2.65,  2.80, 0.40,  6,  6, names=[('NXP', 'SOT616-3')]),
+    VariantRow('xGGD-9', 0.50,  4.00,  4.00,  None,  None,  2.45,  2.45, 0.50,  6,  6, names=[('RGE0024B', 'TI'), ('SOT616-1', 'NXP')]), # noqa: E501
+    VariantRow('xGGD-6', 0.50,  4.00,  4.00,  None,  None,  2.65,  2.80, 0.40,  6,  6, names=[('SOT616-3', 'NXP')]),
 ]
 # fmt: on
 
@@ -134,7 +134,7 @@ def load_variants() -> list[Variant]:
                     num_pins_north_south=row.ND,
                     num_pins_east_west=row.NE,
                     min_clearance=min_K,
-                    additional_names=row.names,
+                    alternative_names=row.names,
                 )
             )
     return variants

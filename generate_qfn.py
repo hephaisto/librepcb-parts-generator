@@ -43,6 +43,7 @@ from entities.common import (
     generate_courtyard,
 )
 from entities.package import (
+    AlternativeName,
     AssemblyType,
     AutoRotate,
     ComponentSide,
@@ -110,12 +111,12 @@ def get_pad_positions(variant: Variant) -> Generator[tuple[str, float], None, No
 
 
 def default_description(variant: Variant) -> str:
-    if variant.additional_names:
-        additional_names = 'Manufacturer-specific names:\n'
-        for manufacturer, name in variant.additional_names:
-            additional_names += f'- {name} ({manufacturer})\n'
+    if variant.alternative_names:
+        alternative_names = 'Manufacturer-specific names:\n'
+        for manufacturer, name in variant.alternative_names:
+            alternative_names += f'- {name} ({manufacturer})\n'
     else:
-        additional_names = ''
+        alternative_names = ''
     return f"""\
 {variant.num_pins}-pin Quad Flat No-Lead package (QFN), standardized by {variant.standard}
 
@@ -123,7 +124,7 @@ Pitch: {variant.pitch:.1f} mm
 Nominal width: {variant.body_size_y:.2f} mm
 Nominal length: {variant.body_size_x:.2f} mm
 Height: {variant.overall_height:.2f} mm
-{additional_names}
+{alternative_names}
 
 Generated with {generator_name}
 """.strip()
@@ -141,12 +142,14 @@ def generate_pkg(
     category = 'pkg'
 
     keywords = f'qfn{variant.num_pins}'
-    for manufacturer, name in variant.additional_names:
-        keywords += f',{manufacturer.lower()}_{name.lower()}'
+    for name, reference in variant.alternative_names:
+        keywords += f',{reference.lower()}_{name.lower()}'
 
     name = variant.name
-    if variant.additional_names:
-        name += f' ({",".join(f"{manufacturer}_{name}" for manufacturer, name in variant.additional_names)})'
+    if variant.alternative_names:
+        name += (
+            f' ({",".join(f"{reference}_{name}" for name, reference in variant.alternative_names)})'
+        )
 
     package_uuid = uuid_cache.sub_cache('pkg', variant.name)
 
@@ -171,6 +174,9 @@ def generate_pkg(
         assembly_type=AssemblyType.SMT,
         min_copper_clearance=MinCopperClearance(variant.min_clearance),
     )
+
+    for name, reference in variant.alternative_names:
+        package.add_alternative_name(AlternativeName(name, reference))
 
     # Create pads
     for p in range(1, variant.num_pins + 1):

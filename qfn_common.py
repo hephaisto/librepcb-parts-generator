@@ -47,7 +47,7 @@ class Variant:
     num_pins_east_west: int
     num_pins_north_south: int
     min_clearance: float
-    additional_names: list[tuple[str, str]]
+    alternative_names: list[tuple[str, str]]
     # relative to "lead width / 2", e.g. the default gives R=0.05 for a lead width of 0.25
     pad_radius: float = field(default=0.4)
 

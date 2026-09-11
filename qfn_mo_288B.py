@@ -80,7 +80,7 @@ variant_table_definition = [
     #           tag      e     D     E     D2    E2    L     L1   ND NE
     VariantRow('xECD  ', 0.50, 1.50, 1.50, None, None, 0.35, 0.40, 1, 3), # smallest
     VariantRow('xHJF  ', 0.35, 2.30, 2.80, None, None, 0.30, 0.40, 4, 8), # biggest
-    VariantRow(  None  , 0.40, 3.00, 3.00, 1.90, 1.90, 0.35, 0.35, 5, 5, names=[('NXP', 'SOT1969-1')]),
+    VariantRow(  None  , 0.40, 3.00, 3.00, 1.90, 1.90, 0.35, 0.35, 5, 5, names=[('SOT1969-1', 'NXP')]),
 ]
 # fmt: on
 
@@ -141,7 +141,7 @@ def load_variants() -> list[Variant]:
                     num_pins_north_south=row.ND,
                     num_pins_east_west=row.NE,
                     min_clearance=min_K,
-                    additional_names=row.names,
+                    alternative_names=row.names,
                 )
             )
     return variants
